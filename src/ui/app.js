@@ -15,6 +15,8 @@ const state = {
   selected: new Set(),
   progress: new Map(), // id -> { status, error, lines[], received, total }
   lastIds: [],
+  installing: false,
+  update: null, // update:check の結果（新しい版があるときだけ）
 };
 
 function el(tag, attrs = {}, ...children) {
@@ -169,10 +171,14 @@ async function startInstall(ids) {
   $("retry").hidden = true;
   $("to-done").hidden = true;
   show("install");
+  state.installing = true;
+  renderUpdate();
   const r = await window.setup.install(ids);
   if (r?.error) {
     $("install-lead").textContent = r.error;
     $("cancel").hidden = true;
+    state.installing = false;
+    renderUpdate();
   }
 }
 
@@ -194,6 +200,8 @@ window.setup.onInstallEvent((e) => {
 });
 
 function finishInstall(e) {
+  state.installing = false;
+  renderUpdate();
   const failed = [...state.progress].filter(([, p]) => p.status === "failed").map(([id]) => id);
   $("cancel").hidden = true;
   if (e.error || failed.length) {
@@ -224,6 +232,50 @@ async function showDone() {
   show("done");
 }
 
+// --- AI Setup 自身の更新 ---
+
+// phase: "available" | "downloading" | "restarting" | "failed"
+function renderUpdate({ phase = "available", percent = null, error = null } = {}) {
+  const u = state.update;
+  const banner = $("update-banner");
+  banner.hidden = !u;
+  if (!u) return;
+  banner.classList.toggle("bad", phase === "failed");
+  const text = {
+    available: u.blocker
+      ? `新しいバージョン（v${u.latest}）があります。${u.blocker}`
+      : `新しいバージョン（v${u.latest}）があります。${state.installing ? "インストールが終わってから更新できます。" : ""}`,
+    downloading: `新しいバージョンを取得しています…${percent != null ? ` ${percent}%` : ""}`,
+    restarting: "新しいバージョンに入れ替えて、開き直します…",
+    failed: `更新できませんでした: ${error}`,
+  }[phase];
+  $("update-text").textContent = text;
+  const idle = phase === "available" || phase === "failed";
+  $("update-apply").hidden = !idle || !!u.blocker;
+  $("update-apply").disabled = state.installing;
+  $("update-apply").textContent = phase === "failed" ? "もう一度" : "更新する";
+  $("update-page").hidden = !idle || !(u.blocker || phase === "failed");
+}
+
+// quiet: 起動時の確認。調べられなかったときも黙っておく
+async function checkUpdate({ quiet = false } = {}) {
+  const btn = $("check-update");
+  btn.disabled = true;
+  btn.textContent = "確認しています…";
+  const r = await window.setup.checkUpdate();
+  btn.disabled = false;
+  state.update = r.available ? r : null;
+  renderUpdate();
+  const result = r.error ? "確認できませんでした" : r.available ? "新しいバージョンがあります" : "最新です";
+  btn.textContent = quiet ? "更新を確認" : result;
+  if (!quiet) setTimeout(() => (btn.textContent = "更新を確認"), 3000);
+}
+
+window.setup.onUpdateEvent((e) => {
+  if (e.type === "progress") renderUpdate({ phase: "downloading", percent: e.total ? Math.floor((e.received / e.total) * 100) : null });
+  else if (e.type === "restarting") renderUpdate({ phase: "restarting" });
+});
+
 // --- 起動 ---
 
 (async () => {
@@ -232,6 +284,7 @@ async function showDone() {
   $("env").textContent = `${state.info.os === "darwin" ? "macOS" : "Windows"} ${state.info.arch} ・ v${state.info.version}`;
   if (state.info.catalogErrors.length) console.error(state.info.catalogErrors);
   show("welcome");
+  checkUpdate({ quiet: true });
 })();
 
 $("start").addEventListener("click", () => {
@@ -258,6 +311,13 @@ $("cancel").addEventListener("click", () => {
 $("retry").addEventListener("click", () => startInstall(state.retryIds));
 $("to-done").addEventListener("click", showDone);
 $("launch-paseo").addEventListener("click", () => window.setup.launch("paseo"));
+$("check-update").addEventListener("click", () => checkUpdate());
+$("update-apply").addEventListener("click", async () => {
+  renderUpdate({ phase: "downloading" });
+  const r = await window.setup.applyUpdate();
+  if (r?.error) renderUpdate({ phase: "failed", error: r.error });
+});
+$("update-page").addEventListener("click", () => window.setup.openUpdatePage());
 $("copy-log").addEventListener("click", async () => {
   await window.setup.copyLog();
   const btn = $("copy-log");

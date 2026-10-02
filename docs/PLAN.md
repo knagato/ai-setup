@@ -121,7 +121,7 @@ ai-setup/  AGENTS.md(+CLAUDE.md symlink)  README.ja.md  package.json
 - **M2（追加項目とログイン）**: Git(CLT)、gh、node、pnpm、Tailscale、Composio、ログイン画面、ログのコピー
 - **M3（設定の配布）**: 雛形、ブロックのマージ、スキルの同梱と修正、差分 UI、退避
 - **M4（Windows）**: `winInstaller`、レジストリの PATH、UTF-8 対策、`dist:win`（x64 と arm64）
-- **M5（署名付きリリース）**: `release.sh` による公証、SmartScreen の手順を README に書く、新版の通知、`refresh-pins`
+- **M5（署名付きリリース）**: `release.sh` による公証、SmartScreen の手順を README に書く、新版の通知と自己更新（`selfupdate.js`、実装済み）、`refresh-pins`
 
 ## 検証
 - **単体テスト**: catalog（スキーマ、依存の循環、URL の許可リスト）、plan（4つの OS × arch の Step[] を固定値と照合）、download（ローカル HTTP 相手のハッシュ不一致と中断）、pathfix と settings（一時 HOME で、何度実行しても同じ結果になるか、退避ができるか）

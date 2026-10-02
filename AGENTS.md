@@ -31,4 +31,7 @@
 - Finder から起動したアプリの PATH は最小限。判定はログインシェル（`$SHELL -ilc`）の PATH を基準にする（`src/core/env.js`）
 - macOS で `git --version` を叩くと、CLT が無い Mac では CLT のインストールダイアログが出てしまう。判定は `xcode-select -p` で（M2）
 - Composio CLI は Windows ネイティブ版が無い（2026-10 時点）
+- アプリ自身の更新は `src/core/selfupdate.js`。公開済みリリースの `latest-mac.yml` / `latest.yml`（electron-builder が書き出す）を読む。
+  mac は zip を検証（sha512・署名・公証・チーム ID・bundle id・版）してから、アプリが終わるのを待って別プロセスで入れ替える。
+  electron-updater は使わない（依存を増やさない）
 - 計画とマイルストーン: `docs/PLAN.md`

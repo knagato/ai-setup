@@ -19,6 +19,7 @@ Claude Code・Codex・Paseo など、パソコンで AI エージェントを動
 - 管理者権限が要らない場所（`~/.local/bin`・`/Applications` か `~/Applications`）に入れます
 - 入っているものは飛ばします。何度実行しても同じ結果になります
 - シェル設定（`~/.zprofile` など）に PATH を足すときは、元のファイルを `.bak-YYYYMMDD` に退避します
+- 起動するたびに新しいバージョンがないか調べます。あれば画面の上に出るので、「更新する」を押すと入れ替わって開き直します
 
 ## 開発
 
@@ -37,8 +38,12 @@ AISETUP_HOME=/tmp/h node src/cli.js install      # 仮のホームに実際に�
 
 ```sh
 pnpm run dist                                         # ad-hoc 署名（手元で試す用）
-APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID 署名 + 公証
+APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID 署名 + 公証 + GitHub Releases に下書き
+gh release edit v<version> --draft=false               # 中身を確かめて公開する
 ```
+
+配った AI Setup は、公開されたリリースの `latest-mac.yml` / `latest.yml` を見て新しい版を知ります。
+新しい版を出すときは、先に `package.json` の `version` を上げてください。
 
 Windows 版はコード署名をしていないため、初回起動時に SmartScreen の警告が出ます
 （「詳細情報」→「実行」）。Windows 11 の Smart App Control が有効な PC では起動できないことがあります。

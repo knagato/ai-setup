@@ -18,6 +18,11 @@
       </ol>
     </header>
     <div id="dry-banner" class="banner" hidden>ドライラン中: 実際には何も入れず、実行する手順だけを表示します</div>
+    <div id="update-banner" class="banner update" hidden>
+      <span id="update-text" class="grow"></span>
+      <button id="update-apply" class="small" hidden>更新する</button>
+      <button id="update-page" class="small" hidden>ダウンロードページを開く</button>
+    </div>
 
     <main>
       <section id="welcome" class="page">
@@ -88,7 +93,10 @@
 
     <footer>
       <span id="env"></span>
-      <button id="copy-log" class="link">サポート用にログをコピー</button>
+      <span class="footer-actions">
+        <button id="check-update" class="link">更新を確認</button>
+        <button id="copy-log" class="link">サポート用にログをコピー</button>
+      </span>
     </footer>
     <script src="app.js"></script>
   </body>

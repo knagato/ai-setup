@@ -81,4 +81,4 @@ async function resolveRelease(install, ctx, { offline = false, fetchText = defau
   return { ...fb, pinned: true };
 }
 
-module.exports = { resolveRelease, parseUpdaterYaml };
+module.exports = { resolveRelease, parseUpdaterYaml, fetchText: defaultFetchText };

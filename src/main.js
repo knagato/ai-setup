@@ -13,6 +13,7 @@ const { makeContext } = require("./core/platform");
 const { probeEnv } = require("./core/env");
 const { detectAll } = require("./core/detect");
 const { installItems } = require("./core/installer");
+const selfUpdate = require("./core/selfupdate");
 
 const dryRun = process.argv.includes("--dry-run");
 const items = loadCatalog();
@@ -20,6 +21,8 @@ const ctx = makeContext();
 
 let win;
 let running = null; // 実行中のインストールの AbortController
+let updating = null; // 実行中の更新の AbortController
+let latestUpdate = null; // update:check で見つけた新しい版
 const logLines = []; // 「ログをコピー」用（画面に出したものと同じ）
 
 // トークンらしきものは伏せてから残す
@@ -71,6 +74,7 @@ handle("detect:all", () => detectEverything());
 
 handle("install:start", (ids) => {
   if (running) return { error: "インストールの途中です" };
+  if (updating) return { error: "AI Setup を更新しています" };
   const known = new Set(items.map((i) => i.id));
   if (!Array.isArray(ids) || !ids.length || !ids.every((id) => known.has(id))) return { error: "選択が正しくありません" };
 
@@ -124,6 +128,62 @@ handle("app:launch", async (id) => {
   return err ? { error: err } : { ok: true };
 });
 
+// --- このアプリ自身の更新 ---
+
+const appPath = ctx.os === "darwin" ? selfUpdate.appBundlePath(process.execPath) : null;
+
+// 更新を入れられない理由（入れられるなら null）。画面ではダウンロードページを案内する
+function updateBlocker() {
+  if (!app.isPackaged) return "開発中の起動では入れ替えません";
+  if (dryRun) return "ドライラン中は入れ替えません";
+  if (ctx.os === "darwin") return selfUpdate.whyCannotReplace(appPath);
+  return null;
+}
+
+handle("update:check", async () => {
+  try {
+    const r = await selfUpdate.checkForUpdate(app.getVersion(), ctx);
+    latestUpdate = r.available ? r : null;
+    if (r.available) writeLog(`== 新しい版があります ${r.current} → ${r.latest}`);
+    return { available: r.available, current: r.current, latest: r.latest, blocker: r.available ? updateBlocker() : null };
+  } catch (e) {
+    writeLog(`== 新しい版を調べられませんでした: ${e.message}`);
+    return { error: e.message };
+  }
+});
+
+handle("update:apply", async () => {
+  if (running) return { error: "インストールが終わってから更新してください" };
+  if (updating) return { error: "更新の途中です" };
+  if (!latestUpdate) return { error: "新しい版はありません" };
+  const blocker = updateBlocker();
+  if (blocker) return { error: blocker };
+
+  updating = new AbortController();
+  writeLog(`== 更新開始 ${latestUpdate.current} → ${latestUpdate.latest}`);
+  try {
+    const prepared = await selfUpdate.prepareUpdate(latestUpdate, {
+      ctx,
+      appPath,
+      signal: updating.signal,
+      onLog: (line) => writeLog(`[update] ${line}`),
+      onProgress: (p) => send("update:event", { type: "progress", ...p }),
+    });
+    writeLog("== 更新の準備ができました。開き直します");
+    send("update:event", { type: "restarting" });
+    selfUpdate.launchUpdate(prepared, { pid: process.pid, appPath, log: path.join(app.getPath("userData"), "update.log") });
+    setTimeout(() => app.quit(), 500);
+    return { ok: true };
+  } catch (e) {
+    writeLog(`== 更新に失敗しました: ${e.message}`);
+    return { error: e.message };
+  } finally {
+    updating = null;
+  }
+});
+
+handle("update:openPage", () => shell.openExternal(selfUpdate.RELEASES_PAGE));
+
 function createWindow() {
   win = new BrowserWindow({
     width: 880,
@@ -157,6 +217,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(createWindow);
   app.on("window-all-closed", () => {
     running?.abort();
+    updating?.abort();
     app.quit();
   });
 }

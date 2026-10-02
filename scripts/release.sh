@@ -1,7 +1,11 @@
 #!/bin/bash
-# 署名・公証済みの dmg / zip を dist/ に作る。
+# 署名・公証済みの dmg / zip を dist/ に作り、GitHub Releases に下書きとして上げる。
 #
 #   APPLE_KEYCHAIN_PROFILE=aisetup-notary ./scripts/release.sh
+#
+# 版は package.json の version（タグは v<version>）。先に上げておくこと。
+# 下書きを確かめてから公開する: gh release edit v<version> --draft=false
+# 公開されたリリースの latest-mac.yml を、配った AI Setup が見に来て更新する（src/core/selfupdate.js）。
 #
 # 前提:
 #   - キーチェーンに "Developer ID Application" 証明書がある（electron-builder が自動で選ぶ）
@@ -14,6 +18,7 @@
 # その場合は自分のターミナルで実行する。
 set -euo pipefail
 cd "$(dirname "$0")/.."
+version=$(node -p 'require("./package.json").version')
 
 if [ -z "${APPLE_KEYCHAIN_PROFILE:-}" ]; then
   echo "APPLE_KEYCHAIN_PROFILE が未設定。公証用のキーチェーンプロファイル名を渡す（例: aisetup-notary）" >&2
@@ -43,4 +48,14 @@ for dmg in dist/*.dmg; do
   xcrun stapler validate "$dmg"
   spctl --assess --type open --context context:primary-signature --verbose=2 "$dmg"
 done
-ls -lh dist/*.dmg dist/*.zip
+ls -lh dist/*.dmg dist/*.zip dist/latest-mac.yml
+
+# 更新に使うのは zip と latest-mac.yml。dmg は初めて入れる人向け
+# （上で署名し直したので、latest-mac.yml にある dmg の sha512 とは一致しない）
+assets=(dist/*.dmg dist/*.zip dist/latest-mac.yml)
+if gh release view "v$version" >/dev/null 2>&1; then
+  gh release upload "v$version" "${assets[@]}" --clobber
+else
+  gh release create "v$version" "${assets[@]}" --draft --title "AI Setup $version" --generate-notes
+fi
+echo "下書きを確かめて公開する: gh release edit v$version --draft=false"

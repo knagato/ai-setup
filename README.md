@@ -21,6 +21,7 @@ recommended settings are planned for later milestones ([docs/PLAN.md](docs/PLAN.
 - Installs into places that need no administrator rights (`~/.local/bin`, `/Applications` or `~/Applications`)
 - Skips what is already installed. Running it again gives the same result
 - Before adding to PATH in a shell profile (`~/.zprofile` etc.), the original file is backed up as `.bak-YYYYMMDD`
+- Checks for a new version on every launch. When one is found, a bar appears at the top; "更新する" (Update) replaces the app and reopens it
 
 ## Development
 
@@ -39,8 +40,12 @@ AISETUP_HOME=/tmp/h node src/cli.js install      # really install into a throwaw
 
 ```sh
 pnpm run dist                                         # ad-hoc signed (for local testing)
-APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID signed + notarized
+APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID signed + notarized + draft GitHub release
+gh release edit v<version> --draft=false               # publish after checking the draft
 ```
+
+Installed copies learn about new versions from `latest-mac.yml` / `latest.yml` of the latest published release.
+Bump `version` in `package.json` before releasing.
 
 The Windows build is not code-signed, so SmartScreen warns on first launch
 ("More info" → "Run anyway"). It may not start on Windows 11 PCs with Smart App Control enabled.

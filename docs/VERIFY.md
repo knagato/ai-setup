@@ -12,6 +12,14 @@
    ```
 4. 画面: `AISETUP_HOME=/tmp/h2 pnpm start -- --remote-debugging-port=19223` を起動し、CDP で各画面を確かめる
 
+## アプリ自身の更新
+- `pnpm test`（版の比較・マニフェストの読み方・入れ替えのシェル）
+- 画面: CDP で `state.update = { available: true, current: "0.1.0", latest: "0.2.0", blocker: null }; renderUpdate()` を評価すると帯が出る
+- 通しの確認は、公証済みの版が2つ要る（ad-hoc 署名の版は公証の確認で弾かれる）:
+  1. v(N) を `release` で作って公開し、dmg から /Applications に入れる
+  2. `version` を上げて v(N+1) を `release` で作って公開する
+  3. v(N) を開くと帯が出る →「更新する」→ 開き直して v(N+1) になっている。記録は `~/Library/Application Support/AI Setup/update.log`
+
 ## リリース前（実機）
 - 新しい macOS ユーザー（標準ユーザー / 管理者ユーザー）で、dmg をブラウザから落として入れる
 - 新しいターミナルで `claude --version` / `codex --version` / `paseo --version` が通る
@@ -24,5 +32,6 @@
 - `pnpm run dist` の .app がカタログを読み、判定できる
 
 ## 未確認（実機待ち）
+- アプリ自身の更新の通し（公証済みのリリースがまだ無い）。Windows の `/S --updated --force-run` も
 - Windows の全手順（PATH 設定・展開は未実装、M4）
 - 標準ユーザーでの /Applications 書き込み不可 → ~/Applications へのフォールバック
