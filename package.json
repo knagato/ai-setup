@@ -1,7 +1,7 @@
 {
   "name": "ai-setup",
   "productName": "AI Setup",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Claude Code・Codex・Paseo などのローカル AI 環境を、クリックだけで入れるインストーラ（macOS / Windows）",
   "license": "MIT",

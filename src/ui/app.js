@@ -1,6 +1,6 @@
-// 画面の進行: ようこそ → 環境チェック → 選択 → インストール → 完了
+// 画面の進行: ようこそ → 環境チェック → 選択 → インストール → ログイン → 完了
 const $ = (id) => document.getElementById(id);
-const PAGES = ["welcome", "check", "select", "install", "done"];
+const PAGES = ["welcome", "check", "select", "install", "login", "done"];
 const TIER_LABEL = { required: "必須", recommended: "おすすめ", optional: "任意" };
 const STATE_BADGE = {
   installed: ["入っています", "ok"],
@@ -219,6 +219,56 @@ function finishInstall(e) {
   state.retryIds = failed;
 }
 
+// --- ログイン ---
+
+const LOGIN_POLL_MS = 3000;
+let loginTimer = null;
+
+function renderLogin(rows) {
+  $("login-list").replaceChildren(
+    ...rows.map((r) => {
+      const [label, kind] = !r.installed
+        ? ["入っていません", ""]
+        : r.loggedIn === true
+          ? ["ログイン済み", "ok"]
+          : r.loggedIn === false
+            ? ["未ログイン", "warn"]
+            : ["確認できません", ""];
+      const btn = el("button", { class: r.loggedIn === true ? "" : "primary", text: r.loggedIn === true ? "もう一度" : "ログインする", disabled: !r.installed });
+      btn.addEventListener("click", async () => {
+        btn.disabled = true;
+        const res = await window.setup.openLogin(r.id);
+        btn.disabled = false;
+        if (res?.error) alert(res.error);
+      });
+      return el(
+        "li",
+        {},
+        el("div", { class: "row" }, el("div", { class: "grow" }, el("div", { class: "name", text: r.name }), r.detail ? el("div", { class: "desc", text: r.detail }) : null), badge(label, kind), btn),
+      );
+    }),
+  );
+}
+
+async function pollLogin(refresh = false) {
+  const rows = await window.setup.loginList(refresh);
+  if ($("login").hidden) return;
+  renderLogin(rows);
+  loginTimer = setTimeout(() => pollLogin(), LOGIN_POLL_MS);
+}
+
+function stopLogin() {
+  clearTimeout(loginTimer);
+  loginTimer = null;
+}
+
+async function showLogin() {
+  stopLogin();
+  $("login-list").replaceChildren(el("li", {}, el("div", { class: "row" }, el("span", { class: "spinner" }), el("span", { text: "確認中" }))));
+  show("login");
+  pollLogin(true);
+}
+
 // --- 完了 ---
 
 async function showDone() {
@@ -301,7 +351,7 @@ $("back-check").addEventListener("click", () => show("check"));
 $("do-install").addEventListener("click", () => {
   const ids = state.items.filter((i) => state.selected.has(i.id)).map((i) => i.id);
   if (ids.length) startInstall(ids);
-  else showDone();
+  else showLogin();
 });
 $("cancel").addEventListener("click", () => {
   $("cancel").disabled = true;
@@ -309,7 +359,9 @@ $("cancel").addEventListener("click", () => {
   window.setup.cancel();
 });
 $("retry").addEventListener("click", () => startInstall(state.retryIds));
-$("to-done").addEventListener("click", showDone);
+$("to-done").addEventListener("click", showLogin);
+$("login-next").addEventListener("click", () => (stopLogin(), showDone()));
+$("login-skip").addEventListener("click", () => (stopLogin(), showDone()));
 $("launch-paseo").addEventListener("click", () => window.setup.launch("paseo"));
 $("check-update").addEventListener("click", () => checkUpdate());
 $("update-apply").addEventListener("click", async () => {

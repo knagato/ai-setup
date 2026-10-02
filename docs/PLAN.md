@@ -36,13 +36,13 @@ Claude / ChatGPT のデスクトップアプリを使っている場合、デフ
 | strategy | 中身 | 使う項目 |
 |---|---|---|
 | `officialScript` | 公式インストールスクリプトを実行する（`.ps1` は BOM 付きで保存） | claude、codex、composio |
-| `archiveBinary` | DL → sha256 を検証 → `~/.local/share/ai-setup/<id>/<ver>` に置き、current へリンクする | gh、node |
+| `archiveBinary` | DL → sha256 を検証 → `~/.local/share/ai-setup/<id>/<ver>` に置き、current へリンクする | gh、node（実装済み） |
 | `macAppZip` | zip を sha512 で検証 → codesign / spctl / TeamID を確認 → `/Applications` に入れる（書けなければ `~/Applications`） | Paseo |
-| `macPkgAdmin` | `osascript … with administrator privileges`。失敗したら `open -W x.pkg` | Tailscale |
+| `macPkgAdmin` | `osascript … with administrator privileges`。失敗したら `open -W x.pkg` | （使わない。Tailscale は管理者権限の要らない zip 版のアプリを `macAppZip` で入れる） |
 | `winInstaller` | サイレント引数で実行する。必要なときだけ `Start-Process -Verb RunAs` で UAC を通す | Paseo `/S`、Git、Tailscale msi |
-| `xcodeClt` | `xcode-select --install` → `xcode-select -p` が通るまでポーリング | Mac の Git |
+| `xcodeClt` | `xcode-select --install` → `xcode-select -p` が通るまでポーリング | Mac の Git（実装済み） |
 | `cliShim` | `~/.local/bin/paseo` の symlink（Windows は `paseo.cmd`） | Paseo CLI |
-| `npmGlobal` | `npm i -g pnpm`（corepack は使わない） | pnpm |
+| `npmGlobal` | `npm i -g --prefix ~/.local/share/ai-setup/npm-global pnpm`（Node の版を上げても消えない。corepack は使わない） | pnpm（実装済み） |
 
 主な公式の入手元:
 | 項目 | 入手元 |
@@ -118,7 +118,7 @@ ai-setup/  AGENTS.md(+CLAUDE.md symlink)  README.ja.md  package.json
 
 ## マイルストーン
 - **M1（Mac の中核）**: core、必須3項目、PATH の修正、検出、画面1〜4、dry-run、単体テスト、ad-hoc の `dist`
-- **M2（追加項目とログイン）**: Git(CLT)、gh、node、pnpm、Tailscale、Composio、ログイン画面、ログのコピー
+- **M2（追加項目とログイン）**: Git(CLT)、gh、node、pnpm、Tailscale、Composio、ログイン画面、ログのコピー（Mac は実装済み。Windows は M4）
 - **M3（設定の配布）**: 雛形、ブロックのマージ、スキルの同梱と修正、差分 UI、退避
 - **M4（Windows）**: `winInstaller`、レジストリの PATH、UTF-8 対策、`dist:win`（x64 と arm64）
 - **M5（署名付きリリース）**: `release.sh` による公証、SmartScreen の手順を README に書く、新版の通知と自己更新（`selfupdate.js`、実装済み）、`refresh-pins`

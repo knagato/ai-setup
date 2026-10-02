@@ -1,0 +1,44 @@
+{
+  "id": "gh",
+  "name": "GitHub CLI",
+  "tier": "recommended",
+  "order": 50,
+  "description": "GitHub をターミナルから使う道具。ターミナルで gh と打って使います",
+  "approxSizeMB": 15,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": {
+        "command": "gh",
+        "versionArgs": ["--version"],
+        "knownPaths": ["~/.local/bin/gh", "/opt/homebrew/bin/gh", "/usr/local/bin/gh"]
+      },
+      "install": {
+        "strategy": "archiveBinary",
+        "format": "zip",
+        "root": "gh_{version}_macOS_{arch}",
+        "bins": ["bin/gh"],
+        "release": {
+          "type": "githubLatest",
+          "repo": "cli/cli",
+          "url": "https://github.com/cli/cli/releases/download/v{version}/gh_{version}_macOS_{arch}.zip",
+          "checksums": "https://github.com/cli/cli/releases/download/v{version}/gh_{version}_checksums.txt",
+          "archMap": { "x64": "amd64" }
+        },
+        "fallback": {
+          "version": "2.102.0",
+          "sha256": {
+            "arm64": "da922c20d1792e5b2cbf375593d7a658acf034c12c84e007e71c76ef959c337e",
+            "x64": "b245f24eb2bf5f75b426b4c26da3651a107f8d5b6f4fddfbfccc5679041378b3"
+          }
+        }
+      },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" },
+  "login": {
+    "command": ["gh", "auth", "login", "--hostname", "github.com", "--git-protocol", "https", "--web"],
+    "status": { "command": ["gh", "auth", "status", "--hostname", "github.com"], "loggedInExitCode": 0 }
+  }
+}

@@ -14,11 +14,17 @@ The UI is Japanese only for now.
 | Required | Claude Code | Official installer (`claude.ai/install.sh` / `install.ps1`) |
 | Required | Codex CLI | Official installer (`chatgpt.com/codex/install.sh` / `install.ps1`) |
 | Required | Paseo | Official build from GitHub Releases (sha512 and code signature are verified) |
+| Recommended | Git | Xcode Command Line Tools on Mac (installed through the OS dialog) |
+| Recommended | GitHub CLI | zip from GitHub Releases (sha256 verified) |
+| Recommended | Node.js | LTS from nodejs.org (sha256 verified) |
+| Recommended | pnpm | via npm, into a place that survives Node.js upgrades |
+| Optional | Tailscale | Official app from pkgs.tailscale.com (sha256 and code signature verified) |
+| Optional | Composio | Official installer (not offered on Windows: no native build) |
 
-Additional tools (Git, gh, Node.js, pnpm), optional ones (Tailscale, Composio), sign-in guidance and
-recommended settings are planned for later milestones ([docs/PLAN.md](docs/PLAN.md)).
+After installing, the app guides you through signing in to Claude Code, Codex, GitHub CLI and Composio (a terminal and a browser open).
+The recommended and optional tools are Mac only for now. Recommended settings are planned for a later milestone ([docs/PLAN.md](docs/PLAN.md)).
 
-- Installs into places that need no administrator rights (`~/.local/bin`, `/Applications` or `~/Applications`)
+- Installs into places that need no administrator rights (`~/.local/bin`, `~/.local/share/ai-setup`, `/Applications` or `~/Applications`); only Git is installed by the OS
 - Skips what is already installed. Running it again gives the same result
 - Before adding to PATH in a shell profile (`~/.zprofile` etc.), the original file is backed up as `.bak-YYYYMMDD`
 - Checks for a new version on every launch. When one is found, a bar appears at the top; "更新する" (Update) replaces the app and reopens it

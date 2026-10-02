@@ -47,6 +47,15 @@ async function detectItem(item, ctx, envInfo) {
   const loginPath = envInfo.loginPath ?? envInfo.searchPath;
   const result = { id: item.id, state: "missing", version: null, path: null, appPath: null };
 
+  // mac の Git。CLT が無いときに git を叩くと CLT のダイアログが出てしまうので、xcode-select -p で判定する。
+  // CLT はシステム全体に入るものなので、仮のホームでも本物を見る
+  if (d.xcodeClt) {
+    if ((await run("/usr/bin/xcode-select", ["-p"])).error) return result;
+    result.path = "/usr/bin/git";
+    result.version = await commandVersion(result.path, d, ctx);
+    return { ...result, state: "installed" };
+  }
+
   if (d.app) {
     result.appPath = findApp(d.app, ctx);
     if (!result.appPath) return result;

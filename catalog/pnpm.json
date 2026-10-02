@@ -1,0 +1,21 @@
+{
+  "id": "pnpm",
+  "name": "pnpm",
+  "tier": "recommended",
+  "order": 70,
+  "description": "Node.js のパッケージを入れる道具。npm より速く、ディスクも食いません",
+  "approxSizeMB": 20,
+  "dependsOn": ["node"],
+  "platforms": {
+    "darwin": {
+      "detect": {
+        "command": "pnpm",
+        "versionArgs": ["--version"],
+        "knownPaths": ["~/.local/bin/pnpm", "~/Library/pnpm/pnpm", "/opt/homebrew/bin/pnpm", "/usr/local/bin/pnpm"]
+      },
+      "install": { "strategy": "npmGlobal", "package": "pnpm", "bins": ["pnpm", "pnpx"] },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "tailscale",
+  "name": "Tailscale",
+  "tier": "optional",
+  "order": 80,
+  "description": "自分のパソコンやスマホをつなぐ安全なネットワーク。外出先からこのパソコンの Paseo を使うときに",
+  "approxSizeMB": 60,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "app": "Tailscale.app" },
+      "install": {
+        "strategy": "macAppZip",
+        "appName": "Tailscale.app",
+        "teamId": "W5364U7YZB",
+        "release": {
+          "type": "tailscaleStable",
+          "url": "https://pkgs.tailscale.com/stable/Tailscale-{version}-macos.zip",
+          "checksums": "https://pkgs.tailscale.com/stable/Tailscale-{version}-macos.zip.sha256"
+        },
+        "fallback": {
+          "version": "1.102.4",
+          "sha256": {
+            "arm64": "9331cef28109464864cd90b2a91fd0cdac09b9b1355d2b7f84de1788863fc2f2",
+            "x64": "9331cef28109464864cd90b2a91fd0cdac09b9b1355d2b7f84de1788863fc2f2"
+          }
+        }
+      }
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" },
+  "launch": { "darwin": "Tailscale.app" }
+}

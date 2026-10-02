@@ -8,13 +8,13 @@
 //   installMacApp { src, name }            … 置いた場所を変数 appPath に入れる
 //   symlink       { target, link }
 //   ensurePath    { dir }
+//   untar         { archive, dest }        … tar.gz を展開する
+//   installDir    { src, dest }            … 展開したフォルダを置く（同じ版が既にあれば置き換える）
+//   xcodeClt      {}                       … Xcode のコマンドライン・ツールを入れる（OS のダイアログが出る）
 // 文字列中の {tmp}（項目ごとの一時ディレクトリ）と {appPath} は、実行時に埋める。
 
 const strategies = require("./strategies");
-const { expand } = require("./platform");
-
-// コマンドを集める場所。PATH に足すのはここ1か所だけにして、個々のツールはここへ symlink を貼る
-const hubDir = (ctx) => expand(ctx, ctx.path.join("~", ".local", "bin"));
+const { expand, hubDir } = require("./platform");
 
 function postInstallSteps(item, ctx) {
   const p = item.platforms[ctx.os];
@@ -50,7 +50,7 @@ function exposeSteps(ctx, foundPath) {
 function planItem(item, ctx, release, { mode = "install", foundPath = null } = {}) {
   const p = item.platforms[ctx.os];
   if (!p) return { id: item.id, unsupported: true, steps: [] };
-  const install = mode === "install" ? strategies[p.install.strategy](p.install, ctx, release) : [];
+  const install = mode === "install" ? strategies[p.install.strategy](p.install, ctx, release, item) : [];
   let post = postInstallSteps(item, ctx);
   if (mode === "fixPath" && foundPath) {
     const expose = exposeSteps(ctx, foundPath);
@@ -87,6 +87,12 @@ function describeStep(step) {
       return `リンク ${step.link} → ${step.target}`;
     case "ensurePath":
       return `PATH に追加 ${step.dir}`;
+    case "untar":
+      return `展開 ${step.archive} → ${step.dest}`;
+    case "installDir":
+      return `配置 ${step.src} → ${step.dest}`;
+    case "xcodeClt":
+      return "Xcode のコマンドライン・ツールを入れる（画面に出るダイアログで「インストール」を押す）";
     default:
       return `${step.kind} ${JSON.stringify(step)}`;
   }

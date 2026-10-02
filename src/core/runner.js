@@ -138,6 +138,45 @@ async function installMacApp({ src, name }, ctx, onLog) {
   return dest;
 }
 
+// 展開したフォルダを dest に置く。同じ版が既にあれば置き換える（途中で失敗したものが残っていても直る）
+async function installDir({ src, dest }, onLog) {
+  if (!fs.existsSync(src)) throw new Error(`展開したものの中に ${path.basename(src)} がありません`);
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.rmSync(dest, { recursive: true, force: true });
+  try {
+    fs.renameSync(src, dest);
+  } catch {
+    await mustRun("/usr/bin/ditto", [src, dest]); // 一時フォルダが別のボリュームにあるとき
+  }
+  onLog(`${dest} に置きました`);
+}
+
+const sleep = (ms, signal) =>
+  new Promise((resolve, reject) => {
+    const t = setTimeout(resolve, ms);
+    signal?.addEventListener("abort", () => (clearTimeout(t), reject(new Error("中断しました"))), { once: true });
+  });
+
+async function cltInstalled() {
+  return !(await run("/usr/bin/xcode-select", ["-p"])).error;
+}
+
+// OS のダイアログを出して、入り終わるまで待つ（ダウンロードを含めて数分〜数十分かかる）
+async function xcodeClt(ctx, onLog, signal, { pollMs = 5000, timeoutMs = 60 * 60 * 1000 } = {}) {
+  if (await cltInstalled()) return onLog("Xcode のコマンドライン・ツールは入っています");
+  if (ctx.homeOverridden) throw new Error("仮のホームでは Xcode のコマンドライン・ツールは入れません（システム全体に入るため）");
+  await run("/usr/bin/xcode-select", ["--install"]); // 既に頼んであるときは失敗するが、そのまま待てばよい
+  onLog("画面に出た「コマンドライン・デベロッパ・ツール」のダイアログで「インストール」を押してください");
+  const until = Date.now() + timeoutMs;
+  let n = 0;
+  while (Date.now() < until) {
+    await sleep(pollMs, signal);
+    if (await cltInstalled()) return onLog("Xcode のコマンドライン・ツールが入りました");
+    if (++n % 12 === 0) onLog("入り終わるのを待っています…");
+  }
+  throw new Error("時間内に入り終わりませんでした。ダイアログを閉じていたら、もう一度やり直してください");
+}
+
 function symlink({ target, link }, onLog) {
   if (!fs.existsSync(target)) throw new Error(`リンク先がありません: ${target}`);
   fs.mkdirSync(path.dirname(link), { recursive: true });
@@ -191,6 +230,17 @@ async function runSteps(steps, opts) {
         case "unzip":
           if (ctx.os === "win32") throw new Error("Windows の展開はまだ対応していません（M4）");
           await mustRun("/usr/bin/ditto", ["-x", "-k", step.archive, step.dest]);
+          break;
+        case "untar":
+          if (ctx.os === "win32") throw new Error("Windows の展開はまだ対応していません（M4）");
+          fs.mkdirSync(step.dest, { recursive: true });
+          await mustRun("/usr/bin/tar", ["-xzf", step.archive, "-C", step.dest]);
+          break;
+        case "installDir":
+          await installDir(step, onLog);
+          break;
+        case "xcodeClt":
+          await xcodeClt(ctx, onLog, signal);
           break;
         case "verifyMacApp":
           await verifyMacApp(step, onLog);

@@ -71,3 +71,17 @@ test("symlink: 自分のリンクは張り替え、普通のファイルは触�
   await runSteps([{ kind: "symlink", target: "/bin/sh", link: plain }], { ctx, envInfo });
   assert.equal(fs.readFileSync(plain, "utf8"), "mine");
 });
+
+test("childEnv: 仮のホームでは、本物のホームを指す変数を渡さない", () => {
+  const { childEnv } = require("../src/core/env.js");
+  const real = os.homedir();
+  process.env.AISETUP_TEST_DIR = path.join(real, ".something");
+  try {
+    const env = childEnv(ctx, envInfo, { KEEP: path.join(real, "x") });
+    assert.equal(env.AISETUP_TEST_DIR, undefined);
+    assert.equal(env.KEEP, path.join(real, "x")); // カタログで明示したものは残す
+    assert.equal(env.HOME, ctx.home);
+  } finally {
+    delete process.env.AISETUP_TEST_DIR;
+  }
+});

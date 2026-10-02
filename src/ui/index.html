@@ -14,6 +14,7 @@
         <li data-step="check">環境チェック</li>
         <li data-step="select">選択</li>
         <li data-step="install">インストール</li>
+        <li data-step="login">ログイン</li>
         <li data-step="done">完了</li>
       </ol>
     </header>
@@ -34,6 +35,7 @@
         <ul class="facts">
           <li><strong>Claude Code</strong> と <strong>Codex</strong> … ファイルを読み書きしながら作業してくれる AI エージェント</li>
           <li><strong>Paseo</strong> … それらを画面から（スマホからも）操作するアプリ</li>
+          <li>Git・GitHub CLI・Node.js など、AI エージェントがよく使う道具もまとめて入れられます</li>
         </ul>
         <p class="note">所要時間は 5〜10 分ほどです。インターネットにつながった状態で進めてください。</p>
         <div class="actions"><button id="start" class="primary">はじめる</button></div>
@@ -68,6 +70,20 @@
           <button id="cancel" class="danger">中断</button>
           <button id="retry" hidden>失敗したものをやり直す</button>
           <button id="to-done" class="primary" hidden>次へ</button>
+        </div>
+      </section>
+
+      <section id="login" class="page" hidden>
+        <h1>ログインしましょう</h1>
+        <p class="lead">
+          「ログインする」を押すとターミナルが開き、続いてブラウザが開きます。ブラウザの案内に従ってください。
+          終わるとここに「ログイン済み」と出ます。
+        </p>
+        <ul id="login-list" class="items"></ul>
+        <p class="note">あとからでもログインできます（ターミナルで claude や codex と打つと案内が出ます）。</p>
+        <div class="actions">
+          <button id="login-skip">あとで</button>
+          <button id="login-next" class="primary">次へ</button>
         </div>
       </section>
 

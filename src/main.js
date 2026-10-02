@@ -14,6 +14,7 @@ const { probeEnv } = require("./core/env");
 const { detectAll } = require("./core/detect");
 const { installItems } = require("./core/installer");
 const selfUpdate = require("./core/selfupdate");
+const { loginStatus, openLogin } = require("./core/login");
 
 const dryRun = process.argv.includes("--dry-run");
 const items = loadCatalog();
@@ -71,6 +72,45 @@ handle("app:info", () => ({
 }));
 
 handle("detect:all", () => detectEverything());
+
+// --- ログイン ---
+// 数秒ごとに状態を聞かれるので、判定（ログインシェルを起動するので重い）はページに入ったときだけにする
+let loginCache = null; // { envInfo, rows: [{ item, detection }] }
+
+async function loginRows(refresh) {
+  if (refresh || !loginCache) {
+    const envInfo = await probeEnv(ctx);
+    const loginItems = items.filter((i) => i.login && i.platforms[ctx.os]);
+    const detections = await detectAll(loginItems, ctx, envInfo);
+    loginCache = { envInfo, rows: loginItems.map((item, i) => ({ item, detection: detections[i] })) };
+  }
+  return loginCache;
+}
+
+handle("login:list", async (refresh) => {
+  const { envInfo, rows } = await loginRows(!!refresh);
+  return Promise.all(
+    rows.map(async ({ item, detection }) => {
+      const installed = detection.state !== "missing" && detection.state !== "unsupported";
+      const status = installed ? await loginStatus(item, ctx, envInfo, detection) : { loggedIn: null };
+      return { id: item.id, name: item.name, installed, loggedIn: status.loggedIn, detail: status.detail ?? null };
+    }),
+  );
+});
+
+handle("login:open", async (id) => {
+  const { envInfo, rows } = await loginRows(false);
+  const row = rows.find((r) => r.item.id === id);
+  if (!row) return { error: "ログインできません" };
+  try {
+    writeLog(`== ログインのターミナルを開きます ${id}`);
+    await openLogin(row.item, ctx, envInfo, row.detection, app.getPath("userData"));
+    return { ok: true };
+  } catch (e) {
+    writeLog(`== ログインのターミナルを開けませんでした ${id}: ${e.message}`);
+    return { error: e.message };
+  }
+});
 
 handle("install:start", (ids) => {
   if (running) return { error: "インストールの途中です" };

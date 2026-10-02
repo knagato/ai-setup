@@ -2,6 +2,7 @@
 // 利用者が新しいターミナルを開いたときの PATH（ログインシェルに聞く）を基準にする。
 
 const fs = require("node:fs");
+const os = require("node:os");
 const { execFile } = require("node:child_process");
 const { expand } = require("./platform");
 
@@ -83,6 +84,11 @@ function childEnv(ctx, envInfo, extra = {}) {
   const env = { ...process.env, NO_COLOR: "1", ...extra };
   env.PATH = envInfo.searchPath.join(ctx.path.delimiter);
   if (ctx.homeOverridden) {
+    // 本物のホームを指す変数（COMPOSIO_INSTALL_DIR など）を渡すと、インストーラが仮のホームの外に入れてしまう
+    const realHome = os.homedir();
+    for (const [k, v] of Object.entries(env)) {
+      if (k !== "PATH" && !(k in extra) && typeof v === "string" && v.includes(realHome)) delete env[k];
+    }
     env.HOME = ctx.home;
     if (ctx.os === "win32") Object.assign(env, ctx.vars);
   }

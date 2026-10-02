@@ -49,4 +49,10 @@ function expand(ctx, s) {
   return out;
 }
 
-module.exports = { makeContext, expand, realArch };
+// コマンドを集める場所。PATH に足すのはここ1か所だけにして、個々のツールはここへ symlink を貼る
+const hubDir = (ctx) => expand(ctx, ctx.path.join("~", ".local", "bin"));
+
+// AI Setup が自分で置くもの（gh・Node など）の置き場。<id>/<version> と、使う版を指す <id>/current
+const dataDir = (ctx, ...parts) => expand(ctx, ctx.path.join("~", ".local", "share", "ai-setup", ...parts));
+
+module.exports = { makeContext, expand, realArch, hubDir, dataDir };

@@ -1,0 +1,26 @@
+{
+  "id": "composio",
+  "name": "Composio",
+  "tier": "optional",
+  "order": 90,
+  "description": "AI エージェントから Gmail・Slack・カレンダーなど 1,000 以上のサービスを使えるようにする道具",
+  "approxSizeMB": 80,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "command": "composio", "versionArgs": ["--version"], "knownPaths": ["~/.local/bin/composio", "~/.composio/composio"] },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://composio.dev/install",
+        "shell": "bash",
+        "env": { "COMPOSIO_INSTALL_SHELL": "none", "COMPOSIO_INSTALL_PLUGINS": "0" }
+      },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    }
+  },
+  "unsupportedReason": { "win32": "Windows ネイティブ版がありません（WSL では使えます）" },
+  "login": {
+    "command": ["composio", "login"],
+    "status": { "command": ["composio", "whoami"], "loggedInPattern": "\"email\"" }
+  }
+}

@@ -7,6 +7,8 @@ contextBridge.exposeInMainWorld("setup", {
   cancel: () => ipcRenderer.invoke("install:cancel"),
   copyLog: () => ipcRenderer.invoke("log:copy"),
   launch: (id) => ipcRenderer.invoke("app:launch", id),
+  loginList: (refresh) => ipcRenderer.invoke("login:list", refresh),
+  openLogin: (id) => ipcRenderer.invoke("login:open", id),
   onInstallEvent: (fn) => ipcRenderer.on("install:event", (_e, payload) => fn(payload)),
   checkUpdate: () => ipcRenderer.invoke("update:check"),
   applyUpdate: () => ipcRenderer.invoke("update:apply"),

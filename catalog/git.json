@@ -1,0 +1,16 @@
+{
+  "id": "git",
+  "name": "Git",
+  "tier": "recommended",
+  "order": 40,
+  "description": "ファイルの変更履歴を残す道具。AI エージェントが作業を元に戻すときにも使います（Mac は Apple の公式ツールとして入ります）",
+  "approxSizeMB": 700,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "xcodeClt": true, "versionArgs": ["--version"] },
+      "install": { "strategy": "xcodeClt", "admin": true }
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" }
+}

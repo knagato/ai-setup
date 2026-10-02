@@ -23,8 +23,15 @@
 ## リリース前（実機）
 - 新しい macOS ユーザー（標準ユーザー / 管理者ユーザー）で、dmg をブラウザから落として入れる
 - 新しいターミナルで `claude --version` / `codex --version` / `paseo --version` が通る
+- 同じく `git --version` / `gh --version` / `node --version` / `npm --version` / `pnpm --version` が通る
+- Xcode のコマンドライン・ツールが無い Mac で、Git を選ぶと OS のダイアログが出て、入り終わると「完了」になる（標準ユーザーでも）
+- ログイン画面で「ログインする」→ ターミナルとブラウザが開き、終わると数秒で「ログイン済み」になる（claude / codex / gh / composio）
 - 既存の `~/.zprofile` が退避（`.bak-YYYYMMDD`）され、ai-setup ブロックが1つだけ入っている
 - Windows: Windows Sandbox（x64）と ARM の VM。インストーラはブラウザ経由で落とし、SmartScreen が出るところから
+
+## 確認済み（2026-10-03, macOS arm64, M2）
+- 仮のホームへの実インストール: gh 2.102.0 / Node.js 24.21.0 / pnpm 12.8.1 / Tailscale 1.102.4 / Composio 0.4.2（約 25 秒）、2回目は全部飛ばす
+- ログイン画面: 仮のホームで、入っていないもの・未ログインのものがそう表示される（ログインそのものは未確認）
 
 ## 確認済み（2026-10-02, macOS arm64）
 - 仮のホームへの実インストール: Claude Code 2.1.287 / Codex 0.160.0 / Paseo 0.10.3（約 47 秒）、2回目は全部飛ばす

@@ -37,6 +37,11 @@ function validateCatalog(items) {
       const s = p.install?.strategy;
       if (!strategies[s]) errors.push(`${where}/${os}: 未知の strategy です（${s}）`);
       if (p.install?.url && !isAllowedUrl(p.install.url)) errors.push(`${where}/${os}: 許可していない URL です（${p.install.url}）`);
+      // 版のテンプレート（{version} など）は仮の値で埋めて確かめる
+      for (const key of ["url", "checksums"]) {
+        const t = p.install?.release?.[key];
+        if (t && !isAllowedUrl(t.replace(/\{\w+\}/g, "x"))) errors.push(`${where}/${os}: 許可していない URL です（${t}）`);
+      }
       for (const step of p.postInstall ?? []) {
         const kind = Object.keys(step)[0];
         if (!POST_INSTALL_KINDS.includes(kind)) errors.push(`${where}/${os}: 未知の postInstall です（${kind}）`);

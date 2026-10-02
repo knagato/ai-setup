@@ -12,11 +12,17 @@ Claude Code・Codex・Paseo など、パソコンで AI エージェントを動
 | 必須 | Claude Code | 公式インストーラ（`claude.ai/install.sh` / `install.ps1`） |
 | 必須 | Codex CLI | 公式インストーラ（`chatgpt.com/codex/install.sh` / `install.ps1`） |
 | 必須 | Paseo | GitHub Releases の公式ビルド（sha512 と署名を確認） |
+| おすすめ | Git | Mac は Xcode のコマンドライン・ツール（OS のダイアログで入れる） |
+| おすすめ | GitHub CLI | GitHub Releases の zip（sha256 を確認） |
+| おすすめ | Node.js | nodejs.org の LTS（sha256 を確認） |
+| おすすめ | pnpm | npm で入れる（Node.js の版を上げても消えない場所に） |
+| 任意 | Tailscale | pkgs.tailscale.com の公式アプリ（sha256 と署名を確認） |
+| 任意 | Composio | 公式インストーラ（Windows はネイティブ版が無いので選べない） |
 
-追加（Git・gh・Node.js・pnpm）、任意（Tailscale・Composio）、ログインの案内、おすすめ設定の配布は
-今後のマイルストーンで足します（[docs/PLAN.md](docs/PLAN.md)）。
+インストールのあと、Claude Code・Codex・GitHub CLI・Composio のログインを案内します（ターミナルとブラウザが開きます）。
+おすすめ・任意のものの Windows 版は準備中です。おすすめ設定の配布も今後足します（[docs/PLAN.md](docs/PLAN.md)）。
 
-- 管理者権限が要らない場所（`~/.local/bin`・`/Applications` か `~/Applications`）に入れます
+- 管理者権限が要らない場所（`~/.local/bin`・`~/.local/share/ai-setup`・`/Applications` か `~/Applications`）に入れます（Git だけは OS が入れます）
 - 入っているものは飛ばします。何度実行しても同じ結果になります
 - シェル設定（`~/.zprofile` など）に PATH を足すときは、元のファイルを `.bak-YYYYMMDD` に退避します
 - 起動するたびに新しいバージョンがないか調べます。あれば画面の上に出るので、「更新する」を押すと入れ替わって開き直します
