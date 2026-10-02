@@ -161,6 +161,7 @@ function renderInstallRow(id) {
 
 async function startInstall(ids) {
   state.lastIds = ids;
+  state.progress.clear(); // 前回の項目（受け付けられなかった依頼の分も）を残さない
   for (const id of ids) state.progress.set(id, { status: "waiting", lines: [], open: false });
   $("install-list").replaceChildren();
   for (const id of ids) renderInstallRow(id);

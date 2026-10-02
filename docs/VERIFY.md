@@ -29,6 +29,19 @@
 - 既存の `~/.zprofile` が退避（`.bak-YYYYMMDD`）され、ai-setup ブロックが1つだけ入っている
 - Windows: Windows Sandbox（x64）と ARM の VM。インストーラはブラウザ経由で落とし、SmartScreen が出るところから
 
+## 確認済み（2026-10-03, macOS arm64, M2 の実機）
+- ログイン: 仮のホームで claude / codex / gh / composio の「ログインする」→ ターミナルとブラウザ → 数秒で「ログイン済み」。
+  本物のキーチェーン（Claude Code・Codex Auth・gh:github.com）は書き換わらない（仮のホームではどれもファイルに保存される）
+- Rosetta: x64 版の 0.1.0 を動かすと、画面は「macOS arm64」になり、Claude Code・Codex・Paseo は arm64 版が入る。
+  「更新する」で arm64 版の 0.2.0 に入れ替わる（x64 の zip ではなく arm64 の zip を取る）
+
+## 仮のホーム（AISETUP_HOME）で試すときの注意
+- キーチェーンを使うツール（gh など）は、HOME が変わるとキーチェーンを見つけられず「キーチェーンが見つかりません」のダイアログを出す。
+  **「キャンセル」を押す**（「デフォルトに戻す」は押さない）。gh はファイル（`<仮のホーム>/.config/gh/hosts.yml`）に保存して続ける
+- 仮のホームでログインした資格情報は本物なので、終わったら仮のホームで各ツールのログアウトを流してから消す
+- 本物のホームを指す環境変数（`COMPOSIO_INSTALL_DIR` など）は子プロセスに渡さない（`env.js` の `childEnv`）。
+  以前は渡していて、本物の `~/.composio` に入ってしまった
+
 ## 確認済み（2026-10-03, macOS arm64, アプリ自身の更新）
 - 公開した v0.1.0 を dmg から /Applications に入れ、v0.2.0 を公開 →「更新を確認」で帯が出る →「更新する」
   → 120.8 MB を取得し、sha512・署名と公証・チーム ID（UN2QQ4V555）を確かめて入れ替え、開き直して v0.2.0 になった（約 15 秒）。
@@ -44,6 +57,8 @@
 - `pnpm run dist` の .app がカタログを読み、判定できる
 
 ## 未確認（実機待ち）
-- アプリ自身の更新: x64 の Mac、標準ユーザー、Windows の `/S --updated --force-run`
+- アプリ自身の更新: 本物の Intel Mac、標準ユーザー、Windows の `/S --updated --force-run`
+- Xcode のコマンドライン・ツールが無い Mac での Git（このMacには Xcode が入っているので試せない）
+- 標準ユーザーで /Applications に書けないときの ~/Applications（標準ユーザーのアカウントで試す）
 - Windows の全手順（PATH 設定・展開は未実装、M4）
 - 標準ユーザーでの /Applications 書き込み不可 → ~/Applications へのフォールバック
