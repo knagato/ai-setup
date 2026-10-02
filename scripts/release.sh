@@ -56,6 +56,7 @@ assets=(dist/*.dmg dist/*.zip dist/latest-mac.yml)
 if gh release view "v$version" >/dev/null 2>&1; then
   gh release upload "v$version" "${assets[@]}" --clobber
 else
-  gh release create "v$version" "${assets[@]}" --draft --title "AI Setup $version" --generate-notes
+  # タグはビルドしたコミットに打つ（push 済みであること）
+  gh release create "v$version" "${assets[@]}" --draft --target "$(git rev-parse HEAD)" --title "AI Setup $version" --generate-notes
 fi
 echo "下書きを確かめて公開する: gh release edit v$version --draft=false"
