@@ -1,0 +1,63 @@
+{
+  "name": "ai-setup",
+  "productName": "AI Setup",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Claude Code・Codex・Paseo などのローカル AI 環境を、クリックだけで入れるインストーラ（macOS / Windows）",
+  "license": "MIT",
+  "author": "knagato (https://github.com/knagato)",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "start:dry": "electron . --dry-run",
+    "plan": "node src/cli.js plan",
+    "detect": "node src/cli.js detect",
+    "test": "node --test tests/",
+    "dist": "electron-builder --mac dir --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false",
+    "dist:win": "electron-builder --win nsis --x64 --arm64 --publish never",
+    "release": "./scripts/release.sh"
+  },
+  "devDependencies": {
+    "electron": "^44.5.1",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.knatrix.aisetup",
+    "productName": "AI Setup",
+    "copyright": "Copyright © 2026 knagato",
+    "files": [
+      "src/**",
+      "catalog/**",
+      "assets/**",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "hardenedRuntime": true,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist",
+      "notarize": true,
+      "artifactName": "${productName}-${version}-${arch}-mac.${ext}"
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "artifactName": "${productName}-${version}-${arch}-win-setup.${ext}"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "deleteAppDataOnUninstall": false
+    }
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "electron"
+    ]
+  }
+}

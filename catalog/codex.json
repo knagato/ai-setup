@@ -1,0 +1,43 @@
+{
+  "id": "codex",
+  "name": "Codex CLI",
+  "tier": "required",
+  "order": 20,
+  "description": "OpenAI のコーディングエージェント。ターミナルで codex と打って使います（ChatGPT のアカウントで使えます）",
+  "approxSizeMB": 130,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": {
+        "command": "codex",
+        "versionArgs": ["--version"],
+        "knownPaths": ["~/.local/bin/codex", "/opt/homebrew/bin/codex", "/usr/local/bin/codex"]
+      },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://chatgpt.com/codex/install.sh",
+        "shell": "sh",
+        "env": { "CODEX_NON_INTERACTIVE": "1" }
+      },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    },
+    "win32": {
+      "detect": {
+        "command": "codex",
+        "versionArgs": ["--version"],
+        "knownPaths": ["%LOCALAPPDATA%\\Programs\\OpenAI\\Codex\\bin\\codex.exe"]
+      },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://chatgpt.com/codex/install.ps1",
+        "shell": "powershell",
+        "env": { "CODEX_NON_INTERACTIVE": "1" }
+      },
+      "postInstall": [{ "ensurePath": "%LOCALAPPDATA%\\Programs\\OpenAI\\Codex\\bin" }]
+    }
+  },
+  "login": {
+    "command": ["codex", "login"],
+    "status": { "command": ["codex", "login", "status"], "loggedInExitCode": 0 }
+  }
+}

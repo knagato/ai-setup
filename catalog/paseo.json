@@ -1,0 +1,63 @@
+{
+  "id": "paseo",
+  "name": "Paseo",
+  "tier": "required",
+  "order": 30,
+  "description": "Claude Code や Codex を画面から操作するデスクトップアプリ。スマホからも使えます",
+  "approxSizeMB": 180,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": {
+        "app": "Paseo.app",
+        "command": "paseo",
+        "knownPaths": ["~/.local/bin/paseo"]
+      },
+      "install": {
+        "strategy": "macAppZip",
+        "appName": "Paseo.app",
+        "teamId": "99ZMJMKU9Y",
+        "release": {
+          "type": "electronUpdater",
+          "repo": "getpaseo/paseo",
+          "manifest": "latest-mac.yml",
+          "file": "Paseo-{version}-{arch}.zip"
+        },
+        "fallback": {
+          "version": "0.10.3",
+          "sha512": {
+            "arm64": "6vHd2lmpVRQrES4UVENO9ddUTsaO2fZY+9xmreYCf5aVcXRdlTMLMziCAytAJFflmFi+ZaFCxkpNBdWmGOlQjQ==",
+            "x64": "zwJScDy6wTXWHQs4c4qJ8I+VsvUe/h0HtRS+hSv9cqR48S/1ZwGx4H49nFsEfd+j2R/eQYXBU/vpyj5KheUxiw=="
+          }
+        }
+      },
+      "postInstall": [
+        { "cliShim": { "name": "paseo", "target": "Contents/Resources/bin/paseo" } },
+        { "ensurePath": "~/.local/bin" }
+      ]
+    },
+    "win32": {
+      "detect": {
+        "knownPaths": ["%LOCALAPPDATA%\\Programs\\Paseo\\Paseo.exe"]
+      },
+      "install": {
+        "strategy": "winInstaller",
+        "args": ["/S"],
+        "release": {
+          "type": "electronUpdater",
+          "repo": "getpaseo/paseo",
+          "manifest": "latest.yml",
+          "file": "Paseo-Setup-{version}-{arch}.exe"
+        },
+        "fallback": {
+          "version": "0.10.3",
+          "sha512": {
+            "arm64": "fv5E1vDVwPuNvlwdCZXxKE/Kjbf5GFjXtrq6gzQZFpWcWa1Abuq/6A4s3q6JPruxwRwiEM9M6G9a+dZ/si1EVg==",
+            "x64": "1XQtA7BC01b4sHcyWaevBuMtrBXJA+sVmhvyHenxGaOlSL5+9k+4+i+7NpZTBHlxuUTtcx5zVhFaK8ZDbdQkmQ=="
+          }
+        }
+      }
+    }
+  },
+  "launch": { "darwin": "Paseo.app", "win32": "%LOCALAPPDATA%\\Programs\\Paseo\\Paseo.exe" }
+}

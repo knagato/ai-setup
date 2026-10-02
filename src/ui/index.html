@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; img-src 'self' data:" />
+    <link rel="stylesheet" href="app.css" />
+    <title>AI Setup</title>
+  </head>
+  <body>
+    <header>
+      <div class="brand">AI Setup</div>
+      <ol id="steps" class="steps">
+        <li data-step="welcome">ようこそ</li>
+        <li data-step="check">環境チェック</li>
+        <li data-step="select">選択</li>
+        <li data-step="install">インストール</li>
+        <li data-step="done">完了</li>
+      </ol>
+    </header>
+    <div id="dry-banner" class="banner" hidden>ドライラン中: 実際には何も入れず、実行する手順だけを表示します</div>
+
+    <main>
+      <section id="welcome" class="page">
+        <h1>AI を使う準備をしましょう</h1>
+        <p class="lead">
+          このアプリは、パソコンで AI エージェントを動かすためのソフトをまとめて入れます。
+          ターミナルでコマンドを打つ必要はありません。
+        </p>
+        <ul class="facts">
+          <li><strong>Claude Code</strong> と <strong>Codex</strong> … ファイルを読み書きしながら作業してくれる AI エージェント</li>
+          <li><strong>Paseo</strong> … それらを画面から（スマホからも）操作するアプリ</li>
+        </ul>
+        <p class="note">所要時間は 5〜10 分ほどです。インターネットにつながった状態で進めてください。</p>
+        <div class="actions"><button id="start" class="primary">はじめる</button></div>
+      </section>
+
+      <section id="check" class="page" hidden>
+        <h1 id="check-title">このパソコンを調べています</h1>
+        <p class="lead" id="check-lead">入っているものを確認しています…</p>
+        <ul id="check-list" class="items"></ul>
+        <div class="actions">
+          <button id="recheck">もう一度調べる</button>
+          <button id="to-select" class="primary" disabled>次へ</button>
+        </div>
+      </section>
+
+      <section id="select" class="page" hidden>
+        <h1>入れるものを選んでください</h1>
+        <p class="lead">必須のものは外せません。入っているものは飛ばします。</p>
+        <ul id="select-list" class="items selectable"></ul>
+        <p class="note" id="select-summary"></p>
+        <div class="actions">
+          <button id="back-check">戻る</button>
+          <button id="do-install" class="primary">インストール</button>
+        </div>
+      </section>
+
+      <section id="install" class="page" hidden>
+        <h1 id="install-title">インストールしています</h1>
+        <p class="lead" id="install-lead">ウィンドウを閉じずにお待ちください。</p>
+        <ul id="install-list" class="items"></ul>
+        <div class="actions">
+          <button id="cancel" class="danger">中断</button>
+          <button id="retry" hidden>失敗したものをやり直す</button>
+          <button id="to-done" class="primary" hidden>次へ</button>
+        </div>
+      </section>
+
+      <section id="done" class="page" hidden>
+        <h1>準備ができました</h1>
+        <p class="lead">使い始めるには、どちらかの方法で。</p>
+        <div class="cards">
+          <div class="card">
+            <h2>画面で使う</h2>
+            <p>Paseo を開き、作業したいフォルダを選んで話しかけます。</p>
+            <button id="launch-paseo" class="primary">Paseo を開く</button>
+          </div>
+          <div class="card">
+            <h2>ターミナルで使う</h2>
+            <p>新しくターミナルを開いて、次のどちらかを打ちます。初回はブラウザでログインします。</p>
+            <pre><code>claude</code></pre>
+            <pre><code>codex</code></pre>
+          </div>
+        </div>
+        <p class="note" id="done-note"></p>
+      </section>
+    </main>
+
+    <footer>
+      <span id="env"></span>
+      <button id="copy-log" class="link">サポート用にログをコピー</button>
+    </footer>
+    <script src="app.js"></script>
+  </body>
+</html>
