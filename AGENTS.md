@@ -15,7 +15,7 @@
 - CLI で確認: `pnpm run detect` / `pnpm run plan -- --os win32 --arch arm64` / `node src/cli.js install --dry-run`
 - 仮のホームに実際に入れる: `AISETUP_HOME=/tmp/h node src/cli.js install`（システム側の既存インストールと /Applications は見ない・触らない）
 - テスト: `pnpm test`
-- ビルド: `pnpm run dist`（ad-hoc 署名）/ リリース: `APPLE_KEYCHAIN_PROFILE=… pnpm run release`
+- ビルド: `pnpm run dist`（ad-hoc 署名）/ リリース: `pnpm run release`（公証のプロファイル名は `APPLE_KEYCHAIN_PROFILE` か `.notary-profile`。エージェントの環境からも公証できる）
 - 画面の動作確認は CDP: `--remote-debugging-port=19223`（127.0.0.1、確認時のみ）
 
 ## Conventions

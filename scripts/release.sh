@@ -1,7 +1,10 @@
 #!/bin/bash
 # 署名・公証済みの dmg / zip を dist/ に作り、GitHub Releases に下書きとして上げる。
 #
-#   APPLE_KEYCHAIN_PROFILE=aisetup-notary ./scripts/release.sh
+#   ./scripts/release.sh
+#
+# 公証に使うキーチェーンプロファイルの名前は、環境変数 APPLE_KEYCHAIN_PROFILE か、
+# リポジトリ直下の .notary-profile（git に入れない。名前を1行だけ書く）で渡す。
 #
 # 版は package.json の version（タグは v<version>）。先に上げておくこと。
 # 下書きを確かめてから公開する: gh release edit v<version> --draft=false
@@ -10,7 +13,7 @@
 # 前提:
 #   - キーチェーンに "Developer ID Application" 証明書がある（electron-builder が自動で選ぶ）
 #   - 公証用の認証情報をキーチェーンに登録済み（初回だけ）:
-#       xcrun notarytool store-credentials aisetup-notary --apple-id <Apple ID> --team-id <Team ID>
+#       xcrun notarytool store-credentials <名前> --apple-id <Apple ID> --team-id <Team ID>
 #     （アプリ用パスワードを聞かれる。https://account.apple.com で発行する）
 #
 # electron-builder は認証情報が無いと警告だけ出して公証を飛ばすので、前後でここが止める。
@@ -20,10 +23,14 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 version=$(node -p 'require("./package.json").version')
 
+if [ -z "${APPLE_KEYCHAIN_PROFILE:-}" ] && [ -f .notary-profile ]; then
+  APPLE_KEYCHAIN_PROFILE=$(head -1 .notary-profile | tr -d '[:space:]')
+fi
 if [ -z "${APPLE_KEYCHAIN_PROFILE:-}" ]; then
-  echo "APPLE_KEYCHAIN_PROFILE が未設定。公証用のキーチェーンプロファイル名を渡す（例: aisetup-notary）" >&2
+  echo "公証用のキーチェーンプロファイル名が無い。APPLE_KEYCHAIN_PROFILE か .notary-profile で渡す" >&2
   exit 1
 fi
+export APPLE_KEYCHAIN_PROFILE # electron-builder もこれを読んで公証する
 xcrun notarytool history --keychain-profile "$APPLE_KEYCHAIN_PROFILE" >/dev/null ||
   { echo "キーチェーンプロファイル $APPLE_KEYCHAIN_PROFILE が使えない（store-credentials を先に）" >&2; exit 1; }
 security find-identity -v -p codesigning | grep -q "Developer ID Application" ||

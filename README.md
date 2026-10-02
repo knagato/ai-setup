@@ -46,9 +46,12 @@ AISETUP_HOME=/tmp/h node src/cli.js install      # really install into a throwaw
 
 ```sh
 pnpm run dist                                         # ad-hoc signed (for local testing)
-APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID signed + notarized + draft GitHub release
+pnpm run release                                      # Developer ID signed + notarized + draft GitHub release
 gh release edit v<version> --draft=false               # publish after checking the draft
 ```
+
+Pass the notarytool keychain profile name via `APPLE_KEYCHAIN_PROFILE` or `.notary-profile` at the repository root
+(not committed; a single line with the name).
 
 Installed copies learn about new versions from `latest-mac.yml` / `latest.yml` of the latest published release.
 Bump `version` in `package.json` before releasing.

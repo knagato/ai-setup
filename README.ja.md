@@ -44,9 +44,12 @@ AISETUP_HOME=/tmp/h node src/cli.js install      # 仮のホームに実際に�
 
 ```sh
 pnpm run dist                                         # ad-hoc 署名（手元で試す用）
-APPLE_KEYCHAIN_PROFILE=aisetup-notary pnpm run release # Developer ID 署名 + 公証 + GitHub Releases に下書き
+pnpm run release                                      # Developer ID 署名 + 公証 + GitHub Releases に下書き
 gh release edit v<version> --draft=false               # 中身を確かめて公開する
 ```
+
+公証に使うキーチェーンプロファイルの名前は、`APPLE_KEYCHAIN_PROFILE` か、リポジトリ直下の `.notary-profile`
+（git に入れない。名前を1行だけ書く）で渡します。
 
 配った AI Setup は、公開されたリリースの `latest-mac.yml` / `latest.yml` を見て新しい版を知ります。
 新しい版を出すときは、先に `package.json` の `version` を上げてください。
