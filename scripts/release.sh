@@ -1,14 +1,15 @@
 #!/bin/bash
-# 署名・公証済みの dmg / zip を dist/ に作り、GitHub Releases に下書きとして上げる。
+# 署名・公証済みの dmg / zip を dist/ に作り、Forgejo（tailnet の中だけ・非公開）のリリースに上げる。
+# そこで落として確かめ、問題なければ scripts/publish.sh で GitHub（公開）に出す。
 #
-#   ./scripts/release.sh
+#   ./scripts/release.sh          （pnpm run release）         … ビルド → Forgejo
+#   ./scripts/publish.sh          （pnpm run release:publish） … Forgejo で確かめたものを GitHub に公開
 #
 # 公証に使うキーチェーンプロファイルの名前は、環境変数 APPLE_KEYCHAIN_PROFILE か、
 # リポジトリ直下の .notary-profile（git に入れない。名前を1行だけ書く）で渡す。
 #
 # 版は package.json の version（タグは v<version>）。先に上げておくこと。
-# 下書きを確かめてから公開する: gh release edit v<version> --draft=false
-# 公開されたリリースの latest-mac.yml を、配った AI Setup が見に来て更新する（src/core/selfupdate.js）。
+# GitHub で公開されたリリースの latest-mac.yml を、配った AI Setup が見に来て更新する（src/core/selfupdate.js）。
 #
 # 前提:
 #   - キーチェーンに "Developer ID Application" 証明書がある（electron-builder が自動で選ぶ）
@@ -59,11 +60,4 @@ ls -lh dist/*.dmg dist/*.zip dist/latest-mac.yml
 
 # 更新に使うのは zip と latest-mac.yml。dmg は初めて入れる人向け
 # （上で署名し直したので、latest-mac.yml にある dmg の sha512 とは一致しない）
-assets=(dist/*.dmg dist/*.zip dist/latest-mac.yml)
-if gh release view "v$version" >/dev/null 2>&1; then
-  gh release upload "v$version" "${assets[@]}" --clobber
-else
-  # タグはビルドしたコミットに打つ（push 済みであること）
-  gh release create "v$version" "${assets[@]}" --draft --target "$(git rev-parse HEAD)" --title "AI Setup $version" --generate-notes
-fi
-echo "下書きを確かめて公開する: gh release edit v$version --draft=false"
+./scripts/forgejo-release.sh

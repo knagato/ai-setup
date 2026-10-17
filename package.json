@@ -15,7 +15,8 @@
     "test": "node --test tests/",
     "dist": "electron-builder --mac dir --publish never -c.mac.identity=- -c.mac.hardenedRuntime=false -c.mac.notarize=false",
     "dist:win": "electron-builder --win nsis --x64 --arm64 --publish never",
-    "release": "./scripts/release.sh"
+    "release": "./scripts/release.sh",
+    "release:publish": "./scripts/publish.sh"
   },
   "devDependencies": {
     "electron": "^44.5.1",

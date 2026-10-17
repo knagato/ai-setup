@@ -18,7 +18,12 @@
 - CLI で確認: `pnpm run detect` / `pnpm run plan -- --os win32 --arch arm64` / `node src/cli.js install --dry-run`
 - 仮のホームに実際に入れる: `AISETUP_HOME=/tmp/h node src/cli.js install`（システム側の既存インストールと /Applications は見ない・触らない）
 - テスト: `pnpm test`
-- ビルド: `pnpm run dist`（ad-hoc 署名）/ リリース: `pnpm run release`（公証のプロファイル名は `APPLE_KEYCHAIN_PROFILE` か `.notary-profile`。エージェントの環境からも公証できる）
+- ビルド: `pnpm run dist`（ad-hoc 署名）
+- リリース: `pnpm run release`（ビルド・署名・公証 → Forgejo のリリースに上げる）→ Forgejo で dmg を落として確かめる →
+  `pnpm run release:publish`（同じファイルかを sha256 で確かめてから、main とタグを GitHub に push して公開）。
+  公証のプロファイル名は `APPLE_KEYCHAIN_PROFILE` か `.notary-profile`。エージェントの環境からも公証できる
+- リモート: `forgejo` = https://forgejo.knatrix.com/knagato/ai-setup（tailnet の中だけ・非公開・確認用）、
+  `origin` = GitHub（公開。配った AI Setup はここのリリースを見て更新する）。普段の push は forgejo、GitHub へは公開のときに
 - 画面の動作確認は CDP: `--remote-debugging-port=19223`（127.0.0.1、確認時のみ）
 
 ## Conventions
