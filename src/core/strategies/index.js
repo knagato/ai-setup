@@ -7,6 +7,7 @@
 module.exports = {
   officialScript: require("./official-script"),
   macAppZip: require("./mac-app-zip"),
+  macAppDmg: require("./mac-app-dmg"),
   winInstaller: require("./win-installer"),
   archiveBinary: require("./archive-binary"),
   npmGlobal: require("./npm-global"),

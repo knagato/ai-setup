@@ -1,7 +1,8 @@
 {
   "id": "claude-code",
   "name": "Claude Code",
-  "tier": "required",
+  "tier": "recommended",
+  "group": "agent",
   "order": 10,
   "description": "Anthropic のコーディングエージェント。ターミナルで claude と打って使います（Claude の有料プランかAPIキーが必要）",
   "approxSizeMB": 220,

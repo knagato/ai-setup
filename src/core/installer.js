@@ -3,6 +3,13 @@
 // 進み具合は onEvent に流す:
 //   { type: "item", id, status: "running" | "done" | "skipped" | "failed", detection?, error? }
 //   { type: "log", id, line }   { type: "progress", id, received, total }
+//   { type: "attention", id, message } … 人の操作を待っている（OS のダイアログなど）
+//
+// OS のダイアログで入れるもの（mac の Git = Xcode のコマンドライン・ツール）や、管理者パスワードを聞くもの（Homebrew）は、
+// 人が操作するまで進まない。その待ちでほかの項目が止まらないよう、最初に裏で始める。
+// それに依存する項目は最後に回し、終わるのを待ってから入れる。
+// after: [id] は「両方選ばれていたら、それが終わってから始める」（入らなくても飛ばさない）。
+// Git は Homebrew の後にする。Homebrew がダイアログなしで Xcode のコマンドライン・ツールを入れるので、Git は「入っています」になる
 
 const { installOrder } = require("./catalog");
 const { detectItem } = require("./detect");
@@ -11,26 +18,47 @@ const { planItem } = require("./plan");
 const { runSteps } = require("./runner");
 const { probeEnv } = require("./env");
 
+// 人の操作（OS のダイアログ・パスワード）を待つ項目
+function waitsForPerson(item, ctx) {
+  const install = item.platforms[ctx.os]?.install;
+  return install?.strategy === "xcodeClt" || !!install?.askpass;
+}
+
+const waitsOn = (item) => [...(item.dependsOn ?? []), ...(item.after ?? [])];
+
+// 実行の順番を、裏で待つもの（background）と順に入れるもの（sequence）に分ける。
+// sequence は、裏で待つものに（間接的にでも）依存しない項目を先に、依存する項目を後に並べる
+function schedule(order, byId, ctx) {
+  const background = order.filter((id) => waitsForPerson(byId.get(id), ctx) && !(byId.get(id).dependsOn ?? []).length);
+  const later = new Set();
+  for (const id of order) {
+    if (background.includes(id)) continue;
+    if (waitsOn(byId.get(id)).some((d) => background.includes(d) || later.has(d))) later.add(id);
+  }
+  const sequence = [...order.filter((id) => !background.includes(id) && !later.has(id)), ...order.filter((id) => later.has(id))];
+  return { background, sequence };
+}
+
 async function installItems(ids, { items, ctx, dryRun = false, offline = false, signal, onEvent = () => {} }) {
   const byId = new Map(items.map((i) => [i.id, i]));
   const order = installOrder(items, ids);
   let envInfo = await probeEnv(ctx);
   const results = {};
 
-  for (const id of order) {
+  async function installOne(id) {
     const item = byId.get(id);
     const log = (line) => onEvent({ type: "log", id, line });
     if (signal?.aborted) {
       results[id] = { status: "failed", error: "中断しました" };
       onEvent({ type: "item", id, ...results[id] });
-      continue;
+      return;
     }
     // 依存先が入らなかったら、この項目も入れない
     const failedDep = (item.dependsOn ?? []).find((d) => results[d]?.status === "failed");
     if (failedDep) {
       results[id] = { status: "failed", error: `${byId.get(failedDep).name} が入らなかったため飛ばしました` };
       onEvent({ type: "item", id, ...results[id] });
-      continue;
+      return;
     }
 
     onEvent({ type: "item", id, status: "running" });
@@ -41,7 +69,7 @@ async function installItems(ids, { items, ctx, dryRun = false, offline = false, 
         log(`入っています${before.version ? `（${before.version}）` : ""}。飛ばします`);
         results[id] = { status: "skipped", detection: before };
         onEvent({ type: "item", id, ...results[id] });
-        continue;
+        return;
       }
       const mode = before.state === "installedNotOnPath" ? "fixPath" : "install";
       if (mode === "fixPath") log("入っていますが、ターミナルから使えるように設定します");
@@ -58,6 +86,7 @@ async function installItems(ids, { items, ctx, dryRun = false, offline = false, 
         signal,
         onLog: log,
         onProgress: (p) => onEvent({ type: "progress", id, ...p }),
+        onAttention: (message) => onEvent({ type: "attention", id, message }),
         vars: { appPath: before.appPath ?? undefined },
       });
 
@@ -77,7 +106,25 @@ async function installItems(ids, { items, ctx, dryRun = false, offline = false, 
     }
     onEvent({ type: "item", id, ...results[id] });
   }
+
+  // 裏で待っている項目が終わるまで待つ（選ばれていない・もう終わったものは待たない）
+  async function waitFor(id) {
+    for (const dep of waitsOn(byId.get(id))) {
+      if (!pending.has(dep) || results[dep]) continue;
+      onEvent({ type: "log", id, line: `${byId.get(dep).name} が入り終わるのを待っています` });
+      await pending.get(dep);
+    }
+  }
+
+  const { background, sequence } = schedule(order, byId, ctx);
+  const pending = new Map();
+  for (const id of background) pending.set(id, waitFor(id).then(() => installOne(id))); // order の順なので、先に始めたものを待てる
+  for (const id of sequence) {
+    await waitFor(id);
+    await installOne(id);
+  }
+  await Promise.all(pending.values());
   return results;
 }
 
-module.exports = { installItems };
+module.exports = { installItems, schedule };

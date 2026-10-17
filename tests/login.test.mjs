@@ -43,6 +43,16 @@ test("loginStatus: 出力のパターンで判定する（終了コードが当�
   assert.deepEqual(await loginStatus(item({ loggedInPattern: '"email"' }), ctx, envInfo, { path: no }), { loggedIn: false });
 });
 
+test("loginStatus: 状態を出すコマンドが無いものは、資格情報のファイルで判定する", async () => {
+  const fileItem = { id: "g", name: "G", platforms: { darwin: { detect: { command: "g" } } }, login: { command: ["g", "login"], status: { file: "~/.g/auth.json", loggedInPattern: '"key"\\s*:' } } };
+  assert.deepEqual(await loginStatus(fileItem, ctx, envInfo, {}), { loggedIn: false });
+  fs.mkdirSync(path.join(tmp, ".g"), { recursive: true });
+  fs.writeFileSync(path.join(tmp, ".g", "auth.json"), "{}");
+  assert.deepEqual(await loginStatus(fileItem, ctx, envInfo, {}), { loggedIn: false });
+  fs.writeFileSync(path.join(tmp, ".g", "auth.json"), '{"https://auth.x.ai::abc": {"key": "t"}}');
+  assert.deepEqual(await loginStatus(fileItem, ctx, envInfo, {}), { loggedIn: true });
+});
+
 test("loginStatus: コマンドが見つからなければ「分からない」", async () => {
   const r = await loginStatus(item({ loggedInExitCode: 0 }), ctx, envInfo, { path: null });
   assert.equal(r.loggedIn, null);

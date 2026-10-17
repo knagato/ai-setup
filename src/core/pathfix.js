@@ -2,8 +2,11 @@
 // 書き換える前に元のファイルを <file>.bak-YYYYMMDD に退避する。
 //
 //   # >>> ai-setup >>>
+//   eval "$(/opt/homebrew/bin/brew shellenv)"   … Homebrew を入れたときだけ（PATH を1か所に絞る決まりの例外）
 //   export PATH="$HOME/.local/bin:$PATH"
 //   # <<< ai-setup <<<
+//
+// eval の行を先に書くので、~/.local/bin が Homebrew の bin より前に来る（AI Setup が入れたものが優先される）
 
 const fs = require("node:fs");
 const path = require("node:path");
@@ -49,24 +52,27 @@ function readBlock(text, home) {
   if (start < 0 || end < 0) return null;
   const body = text.slice(start + BEGIN.length, end);
   const dirs = [...body.matchAll(/^export PATH="(.+):\$PATH"$/gm)].map((m) => fromShell(m[1], home));
-  return { start, end: end + END.length, dirs };
+  const shellenvs = [...body.matchAll(/^eval "\$\((.+) shellenv\)"$/gm)].map((m) => m[1]);
+  return { start, end: end + END.length, dirs, shellenvs };
 }
 
-function renderBlock(dirs, home) {
+function renderBlock({ dirs, shellenvs }, home) {
   // 後に書いた行ほど PATH の前に来る。先に足したものを優先したいので逆順に並べる
-  const lines = [...dirs].reverse().map((d) => `export PATH="${toShell(d, home)}:$PATH"`);
-  return [BEGIN, NOTE, ...lines, END].join("\n");
+  const exports = [...dirs].reverse().map((d) => `export PATH="${toShell(d, home)}:$PATH"`);
+  const evals = shellenvs.map((brew) => `eval "$(${brew} shellenv)"`);
+  return [BEGIN, NOTE, ...evals, ...exports, END].join("\n");
 }
 
+// ブロックを読み、update(block) が返した中身で書き直す。update が null を返したら何もしない。
 // 戻り値: { changed, file, backup }
-function ensurePathDarwin(ctx, dir, { shell, now = new Date() } = {}) {
+function updateBlock(ctx, update, { shell, now = new Date() } = {}) {
   const file = profileFor(ctx, shell);
   const text = fs.existsSync(file) ? fs.readFileSync(file, "utf8") : "";
   const block = readBlock(text, ctx.home);
-  if (block?.dirs.includes(dir)) return { changed: false, file, backup: null };
+  const wanted = update({ dirs: block?.dirs ?? [], shellenvs: block?.shellenvs ?? [] });
+  if (!wanted) return { changed: false, file, backup: null };
 
-  const dirs = [...(block?.dirs ?? []), dir];
-  const rendered = renderBlock(dirs, ctx.home);
+  const rendered = renderBlock(wanted, ctx.home);
   const next = block
     ? text.slice(0, block.start) + rendered + text.slice(block.end)
     : `${text}${text && !text.endsWith("\n") ? "\n" : ""}${text ? "\n" : ""}${rendered}\n`;
@@ -75,4 +81,13 @@ function ensurePathDarwin(ctx, dir, { shell, now = new Date() } = {}) {
   return { changed: true, file, backup: saved };
 }
 
-module.exports = { ensurePathDarwin, profileFor, backup, backupPath, readBlock, BEGIN, END };
+function ensurePathDarwin(ctx, dir, opts) {
+  return updateBlock(ctx, (b) => (b.dirs.includes(dir) ? null : { ...b, dirs: [...b.dirs, dir] }), opts);
+}
+
+// Homebrew の bin を PATH に足す（brew shellenv。Homebrew 自身が案内している書き方）
+function ensureShellenvDarwin(ctx, brew, opts) {
+  return updateBlock(ctx, (b) => (b.shellenvs.includes(brew) ? null : { ...b, shellenvs: [...b.shellenvs, brew] }), opts);
+}
+
+module.exports = { ensurePathDarwin, ensureShellenvDarwin, profileFor, backup, backupPath, readBlock, BEGIN, END };

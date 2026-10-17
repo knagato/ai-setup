@@ -5,10 +5,10 @@
 //   pnpm start            … 普通に起動
 //   pnpm run start:dry    … 何も入れず、実行する手順だけを流す
 
-const { app, BrowserWindow, ipcMain, clipboard, shell } = require("electron");
+const { app, BrowserWindow, ipcMain, clipboard, shell, Notification } = require("electron");
 const fs = require("node:fs");
 const path = require("node:path");
-const { loadCatalog, validateCatalog } = require("./core/catalog");
+const { loadCatalog, loadGroups, validateCatalog } = require("./core/catalog");
 const { makeContext } = require("./core/platform");
 const { probeEnv } = require("./core/env");
 const { detectAll } = require("./core/detect");
@@ -18,6 +18,7 @@ const { loginStatus, openLogin } = require("./core/login");
 
 const dryRun = process.argv.includes("--dry-run");
 const items = loadCatalog();
+const groups = loadGroups();
 const ctx = makeContext();
 
 let win;
@@ -43,15 +44,25 @@ const fromWindow = (e) => e.sender === win?.webContents;
 const handle = (channel, fn) => ipcMain.handle(channel, (e, ...args) => (fromWindow(e) ? fn(...args) : { error: "forbidden" }));
 const send = (channel, payload) => win?.webContents.send(channel, payload);
 
+// 人の操作を待っているとき（OS のダイアログなど）。ウィンドウを見ていない人にも気づいてもらう
+function callAttention(message) {
+  if (Notification.isSupported()) new Notification({ title: "AI Setup", body: message }).show();
+  if (!win?.isFocused()) app.dock?.bounce("critical"); // ウィンドウを見るまで跳ね続ける
+}
+
 function itemSummary(item) {
   const p = item.platforms[ctx.os];
   return {
     id: item.id,
     name: item.name,
     tier: item.tier,
+    group: item.group,
+    dependsOn: item.dependsOn ?? [],
     description: item.description,
     approxSizeMB: item.approxSizeMB ?? null,
     admin: !!(p?.install.elevate || p?.install.admin),
+    command: p?.detect.command ?? null,
+    launchable: !!item.launch?.[ctx.os],
     supported: !!p,
   };
 }
@@ -68,7 +79,8 @@ handle("app:info", () => ({
   home: ctx.home,
   dryRun,
   version: app.getVersion(),
-  catalogErrors: validateCatalog(items),
+  groups: groups.map((g) => ({ id: g.id, name: g.name, description: g.description, atLeastOne: !!g.atLeastOne, done: g.done ?? null })),
+  catalogErrors: validateCatalog(items, groups),
 }));
 
 handle("detect:all", () => detectEverything());
@@ -128,6 +140,10 @@ handle("install:start", (ids) => {
     onEvent: (e) => {
       if (e.type === "log") writeLog(`[${e.id}] ${e.line}`);
       if (e.type === "item" && e.status !== "running") writeLog(`[${e.id}] => ${e.status}${e.error ? `: ${e.error}` : ""}`);
+      if (e.type === "attention") {
+        writeLog(`[${e.id}] (知らせました) ${e.message}`);
+        callAttention(e.message);
+      }
       send("install:event", e.type === "log" ? { ...e, line: redact(e.line) } : e);
     },
   })

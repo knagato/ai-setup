@@ -1,0 +1,53 @@
+{
+  "id": "orca",
+  "name": "Orca",
+  "tier": "optional",
+  "group": "app",
+  "order": 32,
+  "description": "Claude Code や Codex などを、作業ごとに分けた場所で何人も同時に働かせて、結果を見比べられるアプリ",
+  "approxSizeMB": 300,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "app": "Orca.app", "command": "orca", "knownPaths": ["~/.local/bin/orca", "/usr/local/bin/orca"] },
+      "install": {
+        "strategy": "macAppZip",
+        "appName": "Orca.app",
+        "teamId": "6CX3WHS9HZ",
+        "release": {
+          "type": "electronUpdater",
+          "repo": "stablyai/orca",
+          "manifest": "latest-mac.yml",
+          "file": { "arm64": "Orca-{version}-arm64-mac.zip", "x64": "Orca-{version}-mac.zip" }
+        },
+        "fallback": {
+          "version": "1.4.226",
+          "sha512": {
+            "arm64": "otOHVU2OAytaNY5/DaTbp7cEsuEuXGbzVYr5x+p77JElltQ6EBkt9pL6IhpI6mcH9fHVfFGyhX3whpqRMLCGTQ==",
+            "x64": "J/KTTmuQHhXfOFxpSaeBtDqOL5ZIYkxCqBM22Im3xDg61N2JnvNYeVTEUy3F4gy0MriJ9HiplDrcNL4q9difZw=="
+          }
+        }
+      },
+      "postInstall": [
+        { "cliShim": { "name": "orca", "target": "Contents/Resources/bin/orca" } },
+        { "ensurePath": "~/.local/bin" }
+      ]
+    },
+    "win32": {
+      "detect": { "knownPaths": ["%LOCALAPPDATA%\\Programs\\orca\\Orca.exe"] },
+      "install": {
+        "strategy": "winInstaller",
+        "args": ["/S"],
+        "release": { "type": "electronUpdater", "repo": "stablyai/orca", "manifest": "latest.yml", "file": "orca-windows-setup.exe" },
+        "fallback": {
+          "version": "1.4.226",
+          "sha512": {
+            "x64": "ynBWGVgTcR42T/8PcPpiz2sgH5Wmpq6gHQo+Jwo+UveSG5e3tX9t/mFtje0I1L7QjfaEm0s5kB4g3B9daBfVQw==",
+            "arm64": "ynBWGVgTcR42T/8PcPpiz2sgH5Wmpq6gHQo+Jwo+UveSG5e3tX9t/mFtje0I1L7QjfaEm0s5kB4g3B9daBfVQw=="
+          }
+        }
+      }
+    }
+  },
+  "launch": { "darwin": "Orca.app", "win32": "%LOCALAPPDATA%\\Programs\\orca\\Orca.exe" }
+}

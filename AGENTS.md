@@ -5,6 +5,9 @@
 - スタック: Electron + プレーン JS（バンドラなし）+ electron-builder
 - 主要ディレクトリ:
   - `catalog/*.json` … 入れるものの定義（1ツール = 1ファイル）。ツールを増やすときはここに足す
+  - `catalog/groups.json` … 画面のグループ（種類ごと）。各項目は `group` でどれかに属する。外せない「必須」は無く、
+    `atLeastOne` のグループ（AI エージェント = Claude Code / Codex / Pi / OpenCode / Grok / Hermes）だけ「どれか1つは必要」。
+    `done` は完了画面での案内（`launch`: アプリを開くボタン / `terminal`: 打つコマンド）
   - `src/core/` … Electron 非依存の中身。`plan.js` が Step[] を組み立て（純粋関数）、`runner.js` が実行する
   - `src/core/strategies/` … 入れ方（公式スクリプト / zip のアプリ / Windows インストーラ …）。Step[] を返すだけ
   - `src/main.js` `src/preload.js` `src/ui/` … 画面。preload は高水準 API だけを出す（任意のコマンドを渡せる口を作らない）
@@ -24,6 +27,8 @@
 - 取得元は `src/core/download.js` の ALLOWED_HOSTS に限る。ハッシュが分かるものは必ず照合する
 - PATH に足すのは `~/.local/bin` の1か所だけ。個々のツールはそこへ symlink を貼る（`plan.js` の `hubDir`）。
   Homebrew の bin などを丸ごと PATH に足さない。Windows は symlink に権限が要るので、PATH（ユーザー）に足す
+  - 例外: Homebrew そのものを入れたときだけ、ai-setup のブロックに `eval "$(<brew> shellenv)"` を書く（2026-10-17 に決定）。
+    eval を先に書くので `~/.local/bin` が Homebrew の bin より前に来る。新しいシェルで Homebrew の bin が既に見えていれば書かない
 - 利用者のファイル（シェル設定・CLAUDE.md など）は、書き換える前に `<file>.bak-YYYYMMDD` に退避する。何度実行しても同じ結果になるようにする
 - 画面の文言は日本語。非エンジニアが読む前提で、専門用語を避ける
 
@@ -34,4 +39,8 @@
 - アプリ自身の更新は `src/core/selfupdate.js`。公開済みリリースの `latest-mac.yml` / `latest.yml`（electron-builder が書き出す）を読む。
   mac は zip を検証（sha512・署名・公証・チーム ID・bundle id・版）してから、アプリが終わるのを待って別プロセスで入れ替える。
   electron-updater は使わない（依存を増やさない）
+- 人の操作を待つ項目（`xcodeClt` と、`install.askpass` で管理者パスワードを聞くもの）は、インストールの最初に裏で始める（`installer.js` の `schedule`）。
+  待っているあいだは通知と Dock のバウンドで知らせる。`after: [id]` は「両方選ばれていたら後にやる」（入らなくても飛ばさない）。
+  Git は Homebrew の後。Homebrew がダイアログなしで CLT を入れるので、Git は「入っています」になる
+- 管理者パスワードは `SUDO_ASKPASS` に渡す osascript の入力画面で聞く（`runner.js` の `writeAskpass`）。アプリはパスワードを持たない
 - 計画とマイルストーン: `docs/PLAN.md`

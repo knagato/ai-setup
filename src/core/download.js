@@ -11,10 +11,14 @@ const ALLOWED_HOSTS = new Set([
   "chatgpt.com",
   "releases.openai.com",
   "github.com",
+  "api.github.com",
   "nodejs.org",
   "pkgs.tailscale.com",
   "composio.dev",
   "get.pnpm.io",
+  "x.ai",
+  "desktop.docker.com",
+  "cdn-updates.orbstack.dev",
 ]);
 const ALLOWED_SUFFIXES = [".githubusercontent.com"];
 
@@ -29,7 +33,15 @@ function isAllowedUrl(url) {
   return ALLOWED_HOSTS.has(u.hostname) || ALLOWED_SUFFIXES.some((s) => u.hostname.endsWith(s));
 }
 
+// Sparkle（mac アプリの更新の仕組み）の署名。公開鍵は生の 32 バイトなので、SPKI の DER にして読む
+const ED25519_SPKI = Buffer.from("302a300506032b6570032100", "hex");
+function verifyEd25519(file, publicKey, signature) {
+  const key = crypto.createPublicKey({ key: Buffer.concat([ED25519_SPKI, Buffer.from(publicKey, "base64")]), format: "der", type: "spki" });
+  return crypto.verify(null, fs.readFileSync(file), key, Buffer.from(signature, "base64"));
+}
+
 // hash: { algo: "sha256" | "sha512", digest, encoding: "hex" | "base64" }
+//     または { algo: "ed25519", publicKey, signature }（ファイル全体への署名。落とし終えてから確かめる）
 async function download(url, dest, { hash, addBom = false, signal, onProgress, fetchImpl = fetch, allow = isAllowedUrl } = {}) {
   if (!allow(url)) throw new Error(`許可していない取得元です: ${url}`);
   const res = await fetchImpl(url, { redirect: "follow", signal });
@@ -38,7 +50,7 @@ async function download(url, dest, { hash, addBom = false, signal, onProgress, f
 
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   const total = Number(res.headers.get("content-length")) || 0;
-  const hasher = hash ? crypto.createHash(hash.algo) : null;
+  const hasher = hash && hash.algo !== "ed25519" ? crypto.createHash(hash.algo) : null;
   const out = fs.createWriteStream(dest);
   let received = 0;
   let first = true;
@@ -59,6 +71,10 @@ async function download(url, dest, { hash, addBom = false, signal, onProgress, f
     await new Promise((r) => out.end(r));
   }
 
+  if (hash?.algo === "ed25519" && !verifyEd25519(dest, hash.publicKey, hash.signature)) {
+    fs.rmSync(dest, { force: true });
+    throw new Error(`ダウンロードしたファイルの署名が一致しません（ed25519）: ${url}`);
+  }
   if (hasher) {
     const actual = hasher.digest(hash.encoding ?? "hex");
     if (actual !== hash.digest) {
@@ -69,4 +85,4 @@ async function download(url, dest, { hash, addBom = false, signal, onProgress, f
   return { bytes: received };
 }
 
-module.exports = { download, isAllowedUrl, ALLOWED_HOSTS };
+module.exports = { download, isAllowedUrl, verifyEd25519, ALLOWED_HOSTS };

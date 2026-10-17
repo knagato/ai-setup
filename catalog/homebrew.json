@@ -1,0 +1,26 @@
+{
+  "id": "homebrew",
+  "name": "Homebrew",
+  "tier": "recommended",
+  "group": "dev",
+  "order": 38,
+  "description": "Mac に道具を入れるための道具。AI エージェントが「brew install …」で必要なものを入れられるようになります（Git に必要な Apple の公式ツールも、ダイアログなしで一緒に入ります）",
+  "approxSizeMB": 1200,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "command": "brew", "versionArgs": ["--version"], "knownPaths": ["/opt/homebrew/bin/brew", "/usr/local/bin/brew"] },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh",
+        "shell": "bash",
+        "env": { "NONINTERACTIVE": "1" },
+        "askpass": "Homebrew を入れるために、この Mac にログインするときのパスワードを入れてください。",
+        "admin": true,
+        "timeoutMinutes": 60
+      },
+      "postInstall": [{ "brewShellenv": { "arm64": "/opt/homebrew/bin/brew", "x64": "/usr/local/bin/brew" } }]
+    }
+  },
+  "unsupportedReason": { "win32": "Homebrew は Mac 用です" }
+}

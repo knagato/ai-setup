@@ -2,6 +2,7 @@
   "id": "gh",
   "name": "GitHub CLI",
   "tier": "recommended",
+  "group": "dev",
   "order": 50,
   "description": "GitHub をターミナルから使う道具。ターミナルで gh と打って使います",
   "approxSizeMB": 15,

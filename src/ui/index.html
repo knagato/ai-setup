@@ -44,7 +44,7 @@
       <section id="check" class="page" hidden>
         <h1 id="check-title">このパソコンを調べています</h1>
         <p class="lead" id="check-lead">入っているものを確認しています…</p>
-        <ul id="check-list" class="items"></ul>
+        <div id="check-list" class="groups"></div>
         <div class="actions">
           <button id="recheck">もう一度調べる</button>
           <button id="to-select" class="primary" disabled>次へ</button>
@@ -53,8 +53,8 @@
 
       <section id="select" class="page" hidden>
         <h1>入れるものを選んでください</h1>
-        <p class="lead">必須のものは外せません。入っているものは飛ばします。</p>
-        <ul id="select-list" class="items selectable"></ul>
+        <p class="lead">使いたいものに印を付けてください。入っているものは飛ばします。</p>
+        <div id="select-list" class="groups"></div>
         <p class="note" id="select-summary"></p>
         <div class="actions">
           <button id="back-check">戻る</button>
@@ -89,18 +89,22 @@
 
       <section id="done" class="page" hidden>
         <h1>準備ができました</h1>
-        <p class="lead">使い始めるには、どちらかの方法で。</p>
+        <p class="lead" id="done-lead"></p>
         <div class="cards">
-          <div class="card">
+          <div class="card" id="done-apps">
             <h2>画面で使う</h2>
-            <p>Paseo を開き、作業したいフォルダを選んで話しかけます。</p>
-            <button id="launch-paseo" class="primary">Paseo を開く</button>
+            <p>アプリを開き、作業したいフォルダを選んで話しかけます。</p>
+            <div id="launch-list" class="launch-list"></div>
           </div>
-          <div class="card">
+          <div class="card" id="done-start">
+            <h2>最初に一度開く</h2>
+            <p>開くと、使い始める準備が進みます（利用規約への同意や、はじめの設定など）。</p>
+            <div id="start-list" class="launch-list"></div>
+          </div>
+          <div class="card" id="done-terminal">
             <h2>ターミナルで使う</h2>
-            <p>新しくターミナルを開いて、次のどちらかを打ちます。初回はブラウザでログインします。</p>
-            <pre><code>claude</code></pre>
-            <pre><code>codex</code></pre>
+            <p>新しくターミナルを開いて、次のどれかを打ちます。初回はログインや設定の案内が出ます。</p>
+            <div id="command-list"></div>
           </div>
         </div>
         <p class="note" id="done-note"></p>

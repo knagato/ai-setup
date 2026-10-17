@@ -1,0 +1,40 @@
+{
+  "id": "orbstack",
+  "name": "OrbStack",
+  "tier": "optional",
+  "group": "container",
+  "order": 76,
+  "description": "Docker と同じように使えて、軽くて速い Mac 用の道具。初めて開いたときに設定の案内が出ます（個人で使うなら無料、仕事で使うなら有料）",
+  "approxSizeMB": 480,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "minOS": "14",
+      "detect": { "app": "OrbStack.app" },
+      "install": {
+        "strategy": "macAppDmg",
+        "appName": "OrbStack.app",
+        "teamId": "HUAQ24HBR6",
+        "release": {
+          "type": "sparkle",
+          "appcast": "https://cdn-updates.orbstack.dev/{arch}/appcast.new.xml",
+          "channel": "stable",
+          "edKey": "nuUHoUatJ4OxpNCGb5NJ7s5WQYBG4iiZ6rm8JCk0sNQ=",
+          "url": "https://cdn-updates.orbstack.dev/{arch}/OrbStack_v{version}_{build}_{arch}.dmg",
+          "archMap": { "x64": "amd64" }
+        },
+        "fallback": {
+          "version": "2.2.4",
+          "build": "21120",
+          "edSignature": {
+            "arm64": "/Y7W8KYFt/bvNDfXYLz853ikT58bOXgnOAwAdiyYqtosHAjFIq8iH9MKiAEbPyxkMZLUQ+9CTbPV8znog+JSBw==",
+            "x64": "KG5BfZNeyfz+cCfzjDTnACaJZfp4hnbp69PEYoEYCX1xX6eEp8yuKHEtsPkYKU0y9niiakPVOiWQ6ngun5LaDA=="
+          },
+          "size": { "arm64": 469548444, "x64": 505560714 }
+        }
+      }
+    }
+  },
+  "unsupportedReason": { "win32": "OrbStack は Mac 用です" },
+  "launch": { "darwin": "OrbStack.app" }
+}

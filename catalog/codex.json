@@ -1,7 +1,8 @@
 {
   "id": "codex",
   "name": "Codex CLI",
-  "tier": "required",
+  "tier": "recommended",
+  "group": "agent",
   "order": 20,
   "description": "OpenAI のコーディングエージェント。ターミナルで codex と打って使います（ChatGPT のアカウントで使えます）",
   "approxSizeMB": 130,

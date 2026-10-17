@@ -71,6 +71,7 @@ async function main() {
       offline: opts.offline,
       onEvent: (e) => {
         if (e.type === "log") console.log(`[${e.id}] ${e.line}`);
+        else if (e.type === "attention") console.log(`[${e.id}] ！ ${e.message}`);
         else if (e.type === "item" && e.status !== "running") {
           console.log(`[${e.id}] => ${e.status}${e.error ? `: ${e.error}` : ""}`);
         }

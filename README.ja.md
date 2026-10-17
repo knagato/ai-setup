@@ -7,22 +7,35 @@ Claude Code・Codex・Paseo など、パソコンで AI エージェントを動
 
 ## 入るもの
 
-| 区分 | ソフト | 入れ方 |
-|---|---|---|
-| 必須 | Claude Code | 公式インストーラ（`claude.ai/install.sh` / `install.ps1`） |
-| 必須 | Codex CLI | 公式インストーラ（`chatgpt.com/codex/install.sh` / `install.ps1`） |
-| 必須 | Paseo | GitHub Releases の公式ビルド（sha512 と署名を確認） |
-| おすすめ | Git | Mac は Xcode のコマンドライン・ツール（OS のダイアログで入れる） |
-| おすすめ | GitHub CLI | GitHub Releases の zip（sha256 を確認） |
-| おすすめ | Node.js | nodejs.org の LTS（sha256 を確認） |
-| おすすめ | pnpm | npm で入れる（Node.js の版を上げても消えない場所に） |
-| 任意 | Tailscale | pkgs.tailscale.com の公式アプリ（sha256 と署名を確認） |
-| 任意 | Composio | 公式インストーラ（Windows はネイティブ版が無いので選べない） |
+種類ごとのグループに分けて並べ、どれを入れるかを選べます。外せないものはありません。
+「おすすめ」は最初から選んであり、「任意」は自分で選びます。
+AI エージェントは、**どれか1つ**があれば先に進めます。
 
-インストールのあと、Claude Code・Codex・GitHub CLI・Composio のログインを案内します（ターミナルとブラウザが開きます）。
-おすすめ・任意のものの Windows 版は準備中です。おすすめ設定の配布も今後足します（[docs/PLAN.md](docs/PLAN.md)）。
+| グループ | ソフト | 区分 | 入れ方 |
+|---|---|---|---|
+| AI エージェント（どれか1つ） | Claude Code | おすすめ | 公式インストーラ（`claude.ai/install.sh` / `install.ps1`） |
+| | Codex CLI | おすすめ | 公式インストーラ（`chatgpt.com/codex/install.sh` / `install.ps1`） |
+| | Pi | 任意 | npm の `@earendil-works/pi-coding-agent`（Node.js も入れる） |
+| | OpenCode | 任意 | GitHub Releases の zip（sha256 を確認） |
+| | Grok Build | 任意 | 公式インストーラ（`x.ai/cli/install.sh` / `install.ps1`） |
+| | Hermes Agent | 任意 | 公式インストーラ（Git も入れる。約 2 GB・10 分ほど。シェル設定を書き換えるので先に退避する） |
+| 画面から使うアプリ | Paseo | おすすめ | GitHub Releases の公式ビルド（sha512 と署名を確認） |
+| | Orca | 任意 | GitHub Releases の公式ビルド（sha512 と署名を確認） |
+| | T3 Code | 任意 | GitHub Releases の公式ビルド（sha512 と署名を確認。試作段階） |
+| 開発の道具 | Homebrew | おすすめ | 公式インストーラ（管理者パスワードを1回聞く。Git に必要な Xcode のコマンドライン・ツールもダイアログなしで入る。PATH には `brew shellenv` を書く） |
+| | Git | おすすめ | Mac は Xcode のコマンドライン・ツール（Homebrew を入れるならそれで入る。入れないときは OS のダイアログで入れる） |
+| | GitHub CLI | おすすめ | GitHub Releases の zip（sha256 を確認） |
+| | Node.js | おすすめ | nodejs.org の LTS（sha256 を確認） |
+| | pnpm | おすすめ | npm で入れる（Node.js の版を上げても消えない場所に） |
+| アプリを動かす箱（コンテナ） | Docker Desktop | 任意 | desktop.docker.com の dmg（sha256 と署名を確認。macOS 14 以降。大きな会社で仕事に使うなら有料） |
+| | OrbStack | 任意 | 公式の dmg（Sparkle の ed25519 の署名と、アプリの署名を確認。macOS 14 以降。仕事で使うなら有料） |
+| ほかとつなぐ道具 | Tailscale | 任意 | pkgs.tailscale.com の公式アプリ（sha256 と署名を確認） |
+| | Composio | 任意 | 公式インストーラ（Windows はネイティブ版が無いので選べない） |
 
-- 管理者権限が要らない場所（`~/.local/bin`・`~/.local/share/ai-setup`・`/Applications` か `~/Applications`）に入れます（Git だけは OS が入れます）
+インストールのあと、Claude Code・Codex・Grok・Hermes・GitHub CLI・Composio のログインを案内します（ターミナルとブラウザが開きます）。
+Windows で入れられるのは Claude Code・Codex CLI・Grok Build・Paseo・Orca・T3 Code で、ほかは準備中です。おすすめ設定の配布も今後足します（[docs/PLAN.md](docs/PLAN.md)）。
+
+- 管理者権限が要らない場所（`~/.local/bin`・`~/.local/share/ai-setup`・`/Applications` か `~/Applications`）に入れます（Git は OS が、Homebrew は `/opt/homebrew` に管理者パスワードで入れます）
 - 入っているものは飛ばします。何度実行しても同じ結果になります
 - シェル設定（`~/.zprofile` など）に PATH を足すときは、元のファイルを `.bak-YYYYMMDD` に退避します
 - 起動するたびに新しいバージョンがないか調べます。あれば画面の上に出るので、「更新する」を押すと入れ替わって開き直します

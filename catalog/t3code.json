@@ -1,0 +1,44 @@
+{
+  "id": "t3code",
+  "name": "T3 Code",
+  "tier": "optional",
+  "group": "app",
+  "order": 34,
+  "description": "Claude Code や Codex に頼んだ作業を、チャットのような画面で見ながら進められるアプリ（まだ試作段階です）",
+  "approxSizeMB": 140,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "app": "T3 Code (Alpha).app" },
+      "install": {
+        "strategy": "macAppZip",
+        "appName": "T3 Code (Alpha).app",
+        "teamId": "ARK85ZXQ4Z",
+        "release": { "type": "electronUpdater", "repo": "pingdotgg/t3code", "manifest": "latest-mac.yml", "file": "T3-Code-{version}-{arch}.zip" },
+        "fallback": {
+          "version": "0.0.45",
+          "sha512": {
+            "arm64": "kdyl2GvL2YRX4nQybkv7yQV/jpB3oHB7WLZikotFoTiOe5MeYKlRImFmfPfQS6f8u8pjtsmK0mwGasjizMmaqw==",
+            "x64": "0v8dJJjkytsQ40iz1jgUUvZDhzoKDjdnf6Qc+/OcCdiQ5abAwisiJX6Y/XE7LTna+zhXIW8rHSKYXEaXK5phUA=="
+          }
+        }
+      }
+    },
+    "win32": {
+      "detect": { "knownPaths": ["%LOCALAPPDATA%\\Programs\\t3code\\T3 Code (Alpha).exe"] },
+      "install": {
+        "strategy": "winInstaller",
+        "args": ["/S"],
+        "release": { "type": "electronUpdater", "repo": "pingdotgg/t3code", "manifest": "latest.yml", "file": "T3-Code-{version}-{arch}.exe" },
+        "fallback": {
+          "version": "0.0.45",
+          "sha512": {
+            "x64": "FIDTjOV3fAavwMnR/Kf6cBP0sqP1VG9aqf+pm3ADytdt0pL7yjEoR3qCfZNN4zVPGsr8sHHbYBmiPIjpehvPew==",
+            "arm64": "y6fvb6Z6jstRek1bt2MthUGvld3/jyQB+tsirNIm1caKvUJyXrEaVgh0ZsvXezC0EuWvBl4uCyi0Q1E3r/joWw=="
+          }
+        }
+      }
+    }
+  },
+  "launch": { "darwin": "T3 Code (Alpha).app", "win32": "%LOCALAPPDATA%\\Programs\\t3code\\T3 Code (Alpha).exe" }
+}

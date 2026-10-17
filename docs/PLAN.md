@@ -14,35 +14,43 @@ Claude / ChatGPT のデスクトップアプリを使っている場合、デフ
   - preload では `contextBridge` を使い、`contextIsolation` と `sandbox` を有効にし、CSP を設定する
   - テストは `node --test` で書く
   - リリースは `scripts/release.sh` で Developer ID 署名と公証を行う
-- 入れるもの
-  | 区分 | 項目 |
-  |---|---|
-  | 必須 | Claude Code、Codex CLI、Paseo（アプリと `paseo` CLI のシム） |
-  | 追加（既定でオン） | Git（Mac は Xcode CLT、Windows は Git for Windows）、gh、Node LTS、pnpm |
-  | 任意 | Tailscale、Composio（**Windows ネイティブ版がないため、Windows では選べないようにする**） |
+- 入れるもの（外せない「必須」は置かない。種類ごとのグループに分け、その中で選ばせる）
+  | グループ | 項目 | 区分 |
+  |---|---|---|
+  | AI エージェント（**どれか1つ必要**） | Claude Code、Codex CLI | おすすめ |
+  | | Pi、OpenCode、Grok Build、Hermes Agent | 任意 |
+  | 画面から使うアプリ | Paseo（アプリと `paseo` CLI のシム） | おすすめ |
+  | | Orca（アプリと `orca` CLI のシム）、T3 Code | 任意 |
+  | 開発の道具 | Git（Mac は Xcode CLT、Windows は Git for Windows）、gh、Node LTS、pnpm | おすすめ |
+  | アプリを動かす箱（コンテナ） | Docker Desktop、OrbStack（Mac。macOS 14 以降） | 任意 |
+  | ほかとつなぐ道具 | Tailscale、Composio（**Windows ネイティブ版がないため、Windows では選べないようにする**） | 任意 |
+  - 「おすすめ」は既定でオン、「任意」は既定でオフ
+  - グループは `catalog/groups.json` に並べる。`atLeastOne` のグループは、入っているものか選んだものが1つも無いと先に進めない。
+    既にどれかが入っていれば、同じグループのほかの項目は既定でオフにする
 - 初期設定
   - ログインは**外部ターミナルを開いて**行う。node-pty は使わない（ネイティブ依存をゼロに保つ）
   - 推奨設定（CLAUDE.md / AGENTS.md / settings.json / スキル）を、**差分を見せてから**適用する
-- 対象外: tailnet への自動参加、Homebrew と winget の利用
+- 対象外: tailnet への自動参加、winget の利用（Homebrew は 2026-10-17 に Mac の「開発の道具」へ追加。入れる対象としてで、ほかの項目を brew で入れることはしない）
 
 ## アーキテクチャ（カタログ駆動。計画と実行を分ける）
 `catalog/*.json`（データ）→ `core/resolvers.js`（最新版を解決し、失敗したら固定版を使う）
 → `core/plan.js`（純粋関数。item × OS × arch → `Step[]`）→ `core/runner.js`（spawn、ストリーム、中断、dry-run）
 
-- カタログの各項目には `id / tier / dependsOn / platforms.{darwin,win32}.{detect,install,postInstall} / login` を持たせる。
+- カタログの各項目には `id / tier / group / dependsOn / platforms.{darwin,win32}.{detect,install,postInstall} / login` を持たせる。
   **ツールの追加はカタログ1件の追加で済む**ようにする
 - strategy（`src/core/strategies/`）は Step[] を返すだけで、副作用を持たない
 
 | strategy | 中身 | 使う項目 |
 |---|---|---|
-| `officialScript` | 公式インストールスクリプトを実行する（`.ps1` は BOM 付きで保存） | claude、codex、composio |
-| `archiveBinary` | DL → sha256 を検証 → `~/.local/share/ai-setup/<id>/<ver>` に置き、current へリンクする | gh、node（実装済み） |
-| `macAppZip` | zip を sha512 で検証 → codesign / spctl / TeamID を確認 → `/Applications` に入れる（書けなければ `~/Applications`） | Paseo |
+| `officialScript` | 公式インストールスクリプトを実行する（`.ps1` は BOM 付きで保存）。引数・環境変数（PATH も）を渡せる。止められないシェル設定の書き換えがあるものは、先に `backupFiles` を退避する | claude、codex、composio、grok、hermes |
+| `archiveBinary` | DL → sha256 を検証 → `~/.local/share/ai-setup/<id>/<ver>` に置き、current へリンクする。checksums を置かないリリースは GitHub API のアセットの digest で照合する（`githubDigest`） | gh、node、opencode |
+| `macAppDmg` | dmg を照合（Sparkle の appcast から版を読み、配布元の sha256 か ed25519 の署名で）→ 読み取り専用でマウント → codesign / spctl / TeamID → `/Applications` に入れる → マウントを外す（失敗しても外す）。`systemOnly` は `~/Applications` に逃がさない | Docker Desktop、OrbStack |
+| `macAppZip` | zip を sha512 で検証 → codesign / spctl / TeamID を確認 → `/Applications` に入れる（書けなければ `~/Applications`）。ファイル名が arch で揃わない配布元は `release.file` を arch ごとに書く | Paseo、Orca、T3 Code |
 | `macPkgAdmin` | `osascript … with administrator privileges`。失敗したら `open -W x.pkg` | （使わない。Tailscale は管理者権限の要らない zip 版のアプリを `macAppZip` で入れる） |
 | `winInstaller` | サイレント引数で実行する。必要なときだけ `Start-Process -Verb RunAs` で UAC を通す | Paseo `/S`、Git、Tailscale msi |
 | `xcodeClt` | `xcode-select --install` → `xcode-select -p` が通るまでポーリング | Mac の Git（実装済み） |
 | `cliShim` | `~/.local/bin/paseo` の symlink（Windows は `paseo.cmd`） | Paseo CLI |
-| `npmGlobal` | `npm i -g --prefix ~/.local/share/ai-setup/npm-global pnpm`（Node の版を上げても消えない。corepack は使わない） | pnpm（実装済み） |
+| `npmGlobal` | `npm i -g --prefix ~/.local/share/ai-setup/npm-global pnpm`（Node の版を上げても消えない。corepack は使わない） | pnpm、pi |
 
 主な公式の入手元:
 | 項目 | 入手元 |
@@ -117,7 +125,7 @@ ai-setup/  AGENTS.md(+CLAUDE.md symlink)  README.ja.md  package.json
 パスはすべて `AISETUP_HOME` で差し替えられるようにし、テストでは一時 HOME を使う。
 
 ## マイルストーン
-- **M1（Mac の中核）**: core、必須3項目、PATH の修正、検出、画面1〜4、dry-run、単体テスト、ad-hoc の `dist`
+- **M1（Mac の中核）**: core、Claude Code・Codex・Paseo、PATH の修正、検出、画面1〜4、dry-run、単体テスト、ad-hoc の `dist`
 - **M2（追加項目とログイン）**: Git(CLT)、gh、node、pnpm、Tailscale、Composio、ログイン画面、ログのコピー（Mac は実装済み。Windows は M4）
 - **M3（設定の配布）**: 雛形、ブロックのマージ、スキルの同梱と修正、差分 UI、退避
 - **M4（Windows）**: `winInstaller`、レジストリの PATH、UTF-8 対策、`dist:win`（x64 と arm64）

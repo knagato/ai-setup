@@ -2,6 +2,7 @@
   "id": "tailscale",
   "name": "Tailscale",
   "tier": "optional",
+  "group": "connect",
   "order": 80,
   "description": "自分のパソコンやスマホをつなぐ安全なネットワーク。外出先からこのパソコンの Paseo を使うときに",
   "approxSizeMB": 60,

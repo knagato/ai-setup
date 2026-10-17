@@ -7,7 +7,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const { ensurePathDarwin, profileFor } = require("../src/core/pathfix.js");
+const { ensurePathDarwin, ensureShellenvDarwin, profileFor } = require("../src/core/pathfix.js");
 const { makeContext } = require("../src/core/platform.js");
 
 const fresh = () => makeContext({ os: "darwin", home: fs.mkdtempSync(path.join(os.tmpdir(), "aisetup-home-")) });
@@ -47,4 +47,19 @@ test("既存の内容は残し、退避してから追記する。ブロック�
   // 1回目は .bak-20261002、同じ日の2回目は時刻付き
   assert.equal(fs.readFileSync(`${file}.bak-20261002`, "utf8"), 'eval "$(/opt/homebrew/bin/brew shellenv)"');
   assert.ok(fs.existsSync(`${file}.bak-20261002-213005`));
+});
+
+test("Homebrew の shellenv は ai-setup のブロックの中に1行だけ、PATH の行より前に置く", () => {
+  const ctx = fresh();
+  ensurePathDarwin(ctx, path.join(ctx.home, ".local/bin"), { shell: "/bin/zsh", now });
+  const r1 = ensureShellenvDarwin(ctx, "/opt/homebrew/bin/brew", { shell: "/bin/zsh", now });
+  assert.equal(r1.changed, true);
+  const r2 = ensureShellenvDarwin(ctx, "/opt/homebrew/bin/brew", { shell: "/bin/zsh", now });
+  assert.equal(r2.changed, false);
+  ensurePathDarwin(ctx, "/opt/x/bin", { shell: "/bin/zsh", now }); // あとで PATH を足しても shellenv は消えない
+  const text = fs.readFileSync(r1.file, "utf8");
+  assert.equal(text.match(/>>> ai-setup >>>/g).length, 1);
+  assert.equal(text.match(/brew shellenv/g).length, 1);
+  // eval の後に export を書くので、~/.local/bin が Homebrew の bin より前に来る
+  assert.ok(text.indexOf('eval "$(/opt/homebrew/bin/brew shellenv)"') < text.indexOf("$HOME/.local/bin:$PATH"));
 });

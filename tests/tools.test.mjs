@@ -99,6 +99,25 @@ test("Git（mac）: Xcode のコマンドライン・ツール。管理者パス
   assert.equal(planItem(items.get("git"), mac(), null).admin, true);
 });
 
+for (const [arch, brew] of [["arm64", "/opt/homebrew/bin/brew"], ["x64", "/usr/local/bin/brew"]]) {
+  test(`Homebrew（mac ${arch}）: 公式スクリプトを非対話で、パスワードは OS の画面で聞き、shellenv で PATH を通す`, async () => {
+    const { steps } = await planFor("homebrew", arch);
+    const [download, run, shellenv] = steps;
+    assert.equal(steps.length, 3);
+    assert.equal(download.url, "https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh");
+    assert.equal(run.cmd, "/bin/bash");
+    assert.deepEqual(run.env, { NONINTERACTIVE: "1" });
+    assert.match(run.askpass, /パスワード/);
+    assert.deepEqual(shellenv, { kind: "shellenv", brew });
+    assert.equal(planItem(items.get("homebrew"), mac(arch), null).admin, true);
+  });
+}
+
+test("Homebrew: 入っているが PATH が通っていないときは shellenv だけ（brew を ~/.local/bin に貼らない）", () => {
+  const { steps } = planItem(items.get("homebrew"), mac(), null, { mode: "fixPath", foundPath: "/opt/homebrew/bin/brew" });
+  assert.deepEqual(steps, [{ kind: "shellenv", brew: "/opt/homebrew/bin/brew" }]);
+});
+
 test("Tailscale（mac）: ユニバーサルの zip を確かめて /Applications に置く", async () => {
   const io = {
     fetchText: async (u) => {

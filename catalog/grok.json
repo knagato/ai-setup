@@ -1,0 +1,31 @@
+{
+  "id": "grok",
+  "name": "Grok Build",
+  "tier": "optional",
+  "group": "agent",
+  "order": 26,
+  "description": "xAI のコーディングエージェント。ターミナルで grok と打って使います（SuperGrok か X Premium+ の契約が必要）",
+  "approxSizeMB": 70,
+  "dependsOn": [],
+  "platforms": {
+    "darwin": {
+      "detect": { "command": "grok", "versionArgs": ["--version"], "knownPaths": ["~/.local/bin/grok", "~/.grok/bin/grok"] },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://x.ai/cli/install.sh",
+        "shell": "bash",
+        "env": { "SHELL": "/bin/sh", "PATH": "/usr/bin:/bin:/usr/sbin:/sbin" }
+      },
+      "postInstall": [{ "linkBin": "~/.grok/bin/grok" }, { "ensurePath": "~/.local/bin" }]
+    },
+    "win32": {
+      "detect": { "command": "grok", "versionArgs": ["--version"], "knownPaths": ["~\\.grok\\bin\\grok.exe"] },
+      "install": { "strategy": "officialScript", "url": "https://x.ai/cli/install.ps1", "shell": "powershell" },
+      "postInstall": [{ "ensurePath": "~\\.grok\\bin" }]
+    }
+  },
+  "login": {
+    "command": ["grok", "login"],
+    "status": { "file": "~/.grok/auth.json", "loggedInPattern": "\"key\"\\s*:" }
+  }
+}

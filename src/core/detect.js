@@ -43,6 +43,10 @@ async function commandVersion(file, detect, ctx) {
 async function detectItem(item, ctx, envInfo) {
   const p = item.platforms[ctx.os];
   if (!p) return { id: item.id, state: "unsupported", detail: item.unsupportedReason?.[ctx.os] ?? null };
+  // p.minOS: 動く OS のいちばん古い版（mac は "14" = macOS 14）
+  if (p.minOS && ctx.osMajor != null && ctx.osMajor < Number(p.minOS)) {
+    return { id: item.id, state: "unsupported", detail: `macOS ${p.minOS} 以降が必要です（この Mac は macOS ${ctx.osMajor}）` };
+  }
   const d = p.detect;
   const loginPath = envInfo.loginPath ?? envInfo.searchPath;
   const result = { id: item.id, state: "missing", version: null, path: null, appPath: null };

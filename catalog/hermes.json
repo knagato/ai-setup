@@ -1,0 +1,25 @@
+{
+  "id": "hermes",
+  "name": "Hermes Agent",
+  "tier": "optional",
+  "group": "agent",
+  "order": 28,
+  "description": "Nous Research のエージェント。ターミナルで hermes と打って使います。使うほど覚えて育ちます（入れるのに 10 分ほどかかり、約 2 GB 使います）",
+  "approxSizeMB": 2000,
+  "dependsOn": ["git"],
+  "platforms": {
+    "darwin": {
+      "detect": { "command": "hermes", "versionArgs": ["--version"], "knownPaths": ["~/.local/bin/hermes"] },
+      "install": {
+        "strategy": "officialScript",
+        "url": "https://raw.githubusercontent.com/NousResearch/hermes-agent/main/scripts/install.sh",
+        "shell": "bash",
+        "args": ["--non-interactive", "--skip-browser", "--skip-computer-use"],
+        "backupFiles": ["~/.zshrc", "~/.zprofile", "~/.bashrc", "~/.bash_profile", "~/.bash_login", "~/.profile", "~/.config/fish/config.fish"],
+        "timeoutMinutes": 45
+      },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" }
+}

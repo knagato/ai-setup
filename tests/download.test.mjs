@@ -69,3 +69,15 @@ test("PowerShell 用に BOM を付ける（ハッシュは元の中身で計算�
   await download(`${base}/file`, dest, { allow: allowLocal, addBom: true, hash: { algo: "sha256", digest } });
   assert.deepEqual(fs.readFileSync(dest), Buffer.concat([Buffer.from([0xef, 0xbb, 0xbf]), body]));
 });
+
+test("ed25519: Sparkle の署名（生の公開鍵）で確かめ、合わなければ消して止める", async () => {
+  const { publicKey, privateKey } = crypto.generateKeyPairSync("ed25519");
+  const raw = publicKey.export({ format: "der", type: "spki" }).subarray(-32).toString("base64");
+  const signature = crypto.sign(null, body, privateKey).toString("base64");
+  const dest = path.join(tmp, "signed.dmg");
+  await download(`${base}/file`, dest, { hash: { algo: "ed25519", publicKey: raw, signature }, allow: allowLocal });
+  assert.deepEqual(fs.readFileSync(dest), body);
+  const wrong = crypto.sign(null, Buffer.from("other"), privateKey).toString("base64");
+  await assert.rejects(download(`${base}/file`, dest, { hash: { algo: "ed25519", publicKey: raw, signature: wrong }, allow: allowLocal }), /署名が一致しません/);
+  assert.ok(!fs.existsSync(dest));
+});

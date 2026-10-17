@@ -79,10 +79,11 @@ function findExecutable(name, dirs, ctx) {
   return null;
 }
 
-// インストーラなど子プロセスに渡す環境変数
+// インストーラなど子プロセスに渡す環境変数。extra.PATH があればそれを使う
+// （~/.local/bin が見えると勝手にリンクを貼るインストーラがあるので、PATH を絞って渡すことがある）
 function childEnv(ctx, envInfo, extra = {}) {
   const env = { ...process.env, NO_COLOR: "1", ...extra };
-  env.PATH = envInfo.searchPath.join(ctx.path.delimiter);
+  env.PATH = extra.PATH ?? envInfo.searchPath.join(ctx.path.delimiter);
   if (ctx.homeOverridden) {
     // 本物のホームを指す変数（COMPOSIO_INSTALL_DIR など）を渡すと、インストーラが仮のホームの外に入れてしまう
     const realHome = os.homedir();

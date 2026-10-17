@@ -138,6 +138,20 @@ h2 {
   margin: 6px 0;
 }
 
+.groups {
+  display: grid;
+  gap: 20px;
+}
+.group-head {
+  margin-bottom: 8px;
+}
+.group-head h2 {
+  margin: 0;
+}
+.group .error {
+  margin-top: 6px;
+}
+
 .items {
   margin: 0;
   padding: 0;
@@ -241,6 +255,12 @@ progress {
   color: var(--bad);
   font-size: 12px;
 }
+.attention {
+  margin-top: 4px;
+  color: var(--warn);
+  font-size: 13px;
+  font-weight: 600;
+}
 details {
   margin-top: 6px;
 }
@@ -263,7 +283,7 @@ summary {
 
 .cards {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 14px;
 }
 .card {
@@ -271,6 +291,11 @@ summary {
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--panel);
+}
+.launch-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .card p {
   margin: 0 0 12px;

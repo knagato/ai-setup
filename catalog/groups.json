@@ -1,0 +1,31 @@
+[
+  {
+    "id": "agent",
+    "name": "AI エージェント",
+    "description": "ターミナルで AI に作業を頼む道具。どれか1つあれば始められます",
+    "atLeastOne": true,
+    "done": "terminal"
+  },
+  {
+    "id": "app",
+    "name": "画面から使うアプリ",
+    "description": "AI エージェントを、ターミナルを開かずにウィンドウから使えるようにします",
+    "done": "launch"
+  },
+  {
+    "id": "dev",
+    "name": "開発の道具",
+    "description": "AI エージェントが作業するときによく使う道具です"
+  },
+  {
+    "id": "container",
+    "name": "アプリを動かす箱（コンテナ）",
+    "description": "AI が作ったアプリやデータベースを、パソコンを散らかさずに動かすための道具。どちらか1つで足ります",
+    "done": "start"
+  },
+  {
+    "id": "connect",
+    "name": "ほかとつなぐ道具",
+    "description": "外出先のスマホや、ほかのサービスとつなぐときに"
+  }
+]

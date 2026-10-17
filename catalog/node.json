@@ -2,6 +2,7 @@
   "id": "node",
   "name": "Node.js",
   "tier": "recommended",
+  "group": "dev",
   "order": 60,
   "description": "多くの AI ツールや拡張機能が動くのに使う土台（長期サポート版）。node・npm・npx が使えるようになります",
   "approxSizeMB": 50,

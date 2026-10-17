@@ -3,11 +3,13 @@
 //
 //   login.command: ["claude", "auth", "login"]
 //   login.status:  { command: [...], loggedInExitCode: 0 } または { command: [...], loggedInPattern: "正規表現" }
+//                  または { file: "~/.grok/auth.json", loggedInPattern: "正規表現" }（状態を出すコマンドが無いもの）
 
 const fs = require("node:fs");
 const path = require("node:path");
 const { execFile, spawn } = require("node:child_process");
 const { findExecutable, childEnv } = require("./env");
+const { expand } = require("./platform");
 
 // コマンド名を実際のファイルにする。判定で見つかった場所を優先する
 function resolveCommand(name, item, detection, ctx, envInfo) {
@@ -20,6 +22,15 @@ function resolveCommand(name, item, detection, ctx, envInfo) {
 function loginStatus(item, ctx, envInfo, detection, { timeoutMs = 15000 } = {}) {
   const status = item.login?.status;
   if (!status) return Promise.resolve({ loggedIn: null });
+  if (status.file) {
+    let text;
+    try {
+      text = fs.readFileSync(expand(ctx, status.file), "utf8");
+    } catch {
+      return Promise.resolve({ loggedIn: false });
+    }
+    return Promise.resolve({ loggedIn: new RegExp(status.loggedInPattern).test(text) });
+  }
   const [name, ...args] = status.command;
   const file = resolveCommand(name, item, detection, ctx, envInfo);
   if (!file) return Promise.resolve({ loggedIn: null, detail: `${name} が見つかりません` });

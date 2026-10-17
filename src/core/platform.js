@@ -17,7 +17,13 @@ function realArch(platform = process.platform, arch = process.arch) {
   return arch;
 }
 
-function makeContext({ os: platform = process.platform, arch, home, env = process.env } = {}) {
+// macOS のメジャー版（Darwin 20 = macOS 11）。この Mac の版だけを知り、別の OS の計画を出すときは null
+function macosMajor(platform = process.platform) {
+  if (platform !== "darwin" || process.platform !== "darwin") return null;
+  return Number(os.release().split(".")[0]) - 9;
+}
+
+function makeContext({ os: platform = process.platform, arch, home, env = process.env, osMajor } = {}) {
   const override = home ?? env.AISETUP_HOME;
   const p = platform === "win32" ? path.win32 : path.posix;
   // 別の OS の計画を見るときは、その OS らしいホームを仮に置く
@@ -36,6 +42,7 @@ function makeContext({ os: platform = process.platform, arch, home, env = proces
     arch: arch ?? (platform === process.platform ? realArch(platform) : "x64"),
     home: h,
     homeOverridden: !!override,
+    osMajor: osMajor !== undefined ? osMajor : macosMajor(platform),
     path: p,
     vars,
   };

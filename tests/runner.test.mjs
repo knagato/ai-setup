@@ -85,3 +85,85 @@ test("childEnv: 仮のホームでは、本物のホームを指す変数を渡�
     delete process.env.AISETUP_TEST_DIR;
   }
 });
+
+// --- Xcode のコマンドライン・ツール（OS のダイアログ） ---
+const { xcodeClt } = require("../src/core/runner.js");
+const realCtx = makeContext({ os: "darwin", env: {} }); // 仮のホームでは入れないので、ホームを装わない
+
+// probe の答えを、呼ばれた回数ごとに並べておく（足りなくなったら最後の値を返し続ける）
+function fakeProbe({ installed, dialogOpen }) {
+  const seq = (list) => {
+    let i = 0;
+    return async () => list[Math.min(i++, list.length - 1)];
+  };
+  return { installed: seq(installed), dialogOpen: seq(dialogOpen), request: async () => {} };
+}
+
+test("xcodeClt: 入り終わったら成功し、出したときに知らせる", async () => {
+  const lines = [];
+  const attention = [];
+  await xcodeClt(
+    realCtx,
+    { onLog: (l) => lines.push(l), onAttention: (m) => attention.push(m) },
+    { pollMs: 1, probe: fakeProbe({ installed: [false, false, false, true], dialogOpen: [true] }) },
+  );
+  assert.equal(attention.length, 1);
+  assert.match(attention[0], /「インストール」を押してください/);
+  assert.equal(lines.at(-1), "Xcode のコマンドライン・ツールが入りました");
+});
+
+test("xcodeClt: ダイアログが閉じられたら、時間切れを待たずに失敗する", async () => {
+  const started = Date.now();
+  await assert.rejects(
+    xcodeClt(realCtx, { onLog: () => {} }, { pollMs: 1, timeoutMs: 60000, probe: fakeProbe({ installed: [false], dialogOpen: [true, true, false] }) }),
+    /ダイアログが閉じられた/,
+  );
+  assert.ok(Date.now() - started < 5000);
+});
+
+test("xcodeClt: ダイアログを一度も見ていなければ、閉じたとは判断しない", async () => {
+  await assert.rejects(
+    xcodeClt(realCtx, { onLog: () => {} }, { pollMs: 1, timeoutMs: 50, probe: fakeProbe({ installed: [false], dialogOpen: [false] }) }),
+    (e) => /時間内に入り終わりませんでした/.test(e.message) && !/画面に残っている/.test(e.message),
+  );
+});
+
+test("xcodeClt: 押されないまま時間切れになったら、残っているダイアログを押すよう案内し、途中でも知らせる", async () => {
+  const attention = [];
+  await assert.rejects(
+    xcodeClt(
+      realCtx,
+      { onLog: () => {}, onAttention: (m) => attention.push(m) },
+      { pollMs: 5, timeoutMs: 100, remindMs: 30, probe: fakeProbe({ installed: [false], dialogOpen: [true] }) },
+    ),
+    /画面に残っているダイアログで「インストール」を押してから/,
+  );
+  assert.ok(attention.length >= 2, `知らせた回数: ${attention.length}`);
+});
+
+test("xcodeClt: 入っていれば何もしない", async () => {
+  const attention = [];
+  await xcodeClt(realCtx, { onLog: () => {}, onAttention: (m) => attention.push(m) }, { probe: fakeProbe({ installed: [true], dialogOpen: [false] }) });
+  assert.equal(attention.length, 0);
+});
+
+test("askpass: sudo -A に渡すスクリプトを用意し、終わったら消す。仮のホームでは使わない", async () => {
+  const realHome = makeContext({ os: "darwin", env: {} });
+  let seen = null;
+  const attention = [];
+  await runSteps(
+    [{ kind: "spawn", cmd: "/bin/sh", args: ["-c", 'cat "$SUDO_ASKPASS"; echo; echo "$SUDO_ASKPASS"'], askpass: "パスワードを\"入れて\"ください" }],
+    { ctx: realHome, envInfo, onLog: (l) => (seen = seen ? `${seen}\n${l}` : l), onAttention: (m) => attention.push(m) },
+  );
+  assert.match(seen, /osascript -e/);
+  assert.match(seen, /with hidden answer/);
+  assert.match(seen, /パスワードを\\"入れて\\"ください/);
+  const file = seen.trim().split("\n").at(-1);
+  assert.ok(!fs.existsSync(file), "一時フォルダごと消える");
+  assert.equal(attention.length, 1);
+
+  await assert.rejects(
+    runSteps([{ kind: "spawn", cmd: "/bin/true", args: [], askpass: "x" }], { ctx, envInfo }),
+    /仮のホームでは/,
+  );
+});

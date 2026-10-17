@@ -1,0 +1,22 @@
+{
+  "id": "pi",
+  "name": "Pi",
+  "tier": "optional",
+  "group": "agent",
+  "order": 22,
+  "description": "小さく作られ、自分好みに育てられるコーディングエージェント。ターミナルで pi と打って使います（Claude や ChatGPT の契約、各社の API キーでつなぎます）",
+  "approxSizeMB": 60,
+  "dependsOn": ["node"],
+  "platforms": {
+    "darwin": {
+      "detect": {
+        "command": "pi",
+        "versionArgs": ["--version"],
+        "knownPaths": ["~/.local/bin/pi", "~/.pi/agent/bin/pi", "/opt/homebrew/bin/pi", "/usr/local/bin/pi"]
+      },
+      "install": { "strategy": "npmGlobal", "package": "@earendil-works/pi-coding-agent", "bins": ["pi"] },
+      "postInstall": [{ "ensurePath": "~/.local/bin" }]
+    }
+  },
+  "unsupportedReason": { "win32": "Windows 版は準備中です" }
+}

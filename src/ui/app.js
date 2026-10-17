@@ -1,7 +1,7 @@
 // 画面の進行: ようこそ → 環境チェック → 選択 → インストール → ログイン → 完了
 const $ = (id) => document.getElementById(id);
 const PAGES = ["welcome", "check", "select", "install", "login", "done"];
-const TIER_LABEL = { required: "必須", recommended: "おすすめ", optional: "任意" };
+const TIER_LABEL = { recommended: "おすすめ", optional: "任意" };
 const STATE_BADGE = {
   installed: ["入っています", "ok"],
   installedNotOnPath: ["設定だけ必要", "warn"],
@@ -33,6 +33,37 @@ function el(tag, attrs = {}, ...children) {
 
 const badge = (text, kind = "") => el("span", { class: `badge ${kind}`, text });
 
+// --- グループ ---
+// 項目は種類ごとのグループに分けて見せる。atLeastOne のグループ（AI エージェント）は、どれか1つあればよい
+
+const present = (i) => i.detection.state === "installed" || i.detection.state === "installedNotOnPath";
+const members = (g) => state.items.filter((i) => i.group === g.id);
+// 「Claude Code か Codex CLI のどちらか」。3つ以上なら名前を並べず「AI エージェントのどれか1つ」
+const pickOne = (g) => {
+  const names = members(g).filter((i) => i.supported).map((i) => i.name);
+  return names.length === 2 ? `${names.join(" か ")} のどちらか` : `${g.name}のどれか1つ`;
+};
+
+// atLeastOne のグループのうち、条件（ok: 項目 → 足りているか）を満たす項目が1つも無いもの
+const unmetGroups = (ok) => state.info.groups.filter((g) => g.atLeastOne && !members(g).some(ok));
+
+// 選ぶ画面では、グループの下に注意の欄（group-note-<id>）を置く。中身は renderSummary が選択のたびに書き換える
+function renderGroups(container, renderItem, { selectable = false } = {}) {
+  container.replaceChildren(
+    ...state.info.groups
+      .filter((g) => members(g).length)
+      .map((g) =>
+        el(
+          "section",
+          { class: "group" },
+          el("div", { class: "group-head" }, el("h2", { text: g.name }), el("div", { class: "desc", text: g.description })),
+          el("ul", { class: selectable ? "items selectable" : "items" }, ...members(g).map(renderItem)),
+          selectable ? el("div", { class: "error", id: `group-note-${g.id}`, hidden: true }) : null,
+        ),
+      ),
+  );
+}
+
 function show(page) {
   for (const p of PAGES) $(p).hidden = p !== page;
   const idx = PAGES.indexOf(page);
@@ -49,7 +80,7 @@ async function runCheck() {
   $("recheck").disabled = true;
   $("check-title").textContent = "このパソコンを調べています";
   $("check-lead").textContent = "入っているものを確認しています…";
-  $("check-list").replaceChildren(el("li", {}, el("div", { class: "row" }, el("span", { class: "spinner" }), el("span", { text: "確認中" }))));
+  $("check-list").replaceChildren(el("ul", { class: "items" }, el("li", {}, el("div", { class: "row" }, el("span", { class: "spinner" }), el("span", { text: "確認中" })))));
   state.items = await window.setup.detectAll();
   renderCheck();
   $("recheck").disabled = false;
@@ -59,48 +90,71 @@ async function runCheck() {
 function renderCheck() {
   const missing = state.items.filter((i) => i.detection.state !== "installed" && i.supported).length;
   $("check-title").textContent = "このパソコンの状態";
-  $("check-lead").textContent = missing ? `${missing} 個を入れる必要があります。` : "必要なものはすべて入っています。";
-  $("check-list").replaceChildren(
-    ...state.items.map((item) => {
-      const d = item.detection;
-      const [label, kind] = STATE_BADGE[d.state];
-      return el(
-        "li",
-        {},
-        el(
-          "div",
-          { class: "row" },
-          el("div", { class: "grow" }, el("div", { class: "name", text: item.name }), el("div", { class: "desc", text: d.version ? `バージョン ${d.version}` : item.description })),
-          badge(TIER_LABEL[item.tier]),
-          badge(label, kind),
-        ),
-      );
-    }),
-  );
+  $("check-lead").textContent = missing ? `${missing} 個がまだ入っていません。次の画面で、入れるものを選べます。` : "すべて入っています。";
+  renderGroups($("check-list"), (item) => {
+    const d = item.detection;
+    const [label, kind] = STATE_BADGE[d.state];
+    return el(
+      "li",
+      {},
+      el(
+        "div",
+        { class: "row" },
+        el("div", { class: "grow" }, el("div", { class: "name", text: item.name }), el("div", { class: "desc", text: d.version ? `バージョン ${d.version}` : item.description })),
+        badge(TIER_LABEL[item.tier]),
+        badge(label, kind),
+      ),
+    );
+  });
 }
 
 // --- 選択 ---
 
+// 選んだものが頼る項目（Pi → Node.js、Hermes → Git）も、入っていなければ一緒に選ぶ。
+// 入れるときにも足されるが、画面に出しておかないと黙って入ることになる
+function withDeps(ids) {
+  const out = new Set(ids);
+  const visit = (id) => {
+    for (const dep of state.items.find((i) => i.id === id)?.dependsOn ?? []) {
+      const d = state.items.find((i) => i.id === dep);
+      if (!d || out.has(dep) || d.detection.state === "installed") continue;
+      out.add(dep);
+      visit(dep);
+    }
+  };
+  for (const id of ids) visit(id);
+  return out;
+}
+
+// おすすめを選んでおく。ただし、どれか1つでよいグループにもう入っているものがあれば、ほかは足さない
 function defaultSelection() {
-  state.selected = new Set(
-    state.items.filter((i) => i.supported && i.detection.state !== "installed" && i.tier !== "optional").map((i) => i.id),
+  const satisfied = new Set(state.info.groups.filter((g) => g.atLeastOne && members(g).some(present)).map((g) => g.id));
+  state.selected = withDeps(
+    state.items
+      .filter((i) => i.supported && i.detection.state !== "installed" && i.tier === "recommended")
+      .filter((i) => !satisfied.has(i.group) || present(i))
+      .map((i) => i.id),
   );
 }
 
 function renderSelect() {
-  $("select-list").replaceChildren(
-    ...state.items.map((item) => {
+  renderGroups(
+    $("select-list"),
+    (item) => {
       const d = item.detection;
       const installed = d.state === "installed";
-      const locked = installed || !item.supported || item.tier === "required";
+      const locked = installed || !item.supported;
       const box = el("input", {
         type: "checkbox",
         checked: state.selected.has(item.id),
         disabled: locked,
       });
       box.addEventListener("change", () => {
-        if (box.checked) state.selected.add(item.id);
-        else state.selected.delete(item.id);
+        if (box.checked) {
+          const before = state.selected.size;
+          state.selected = withDeps([...state.selected, item.id]);
+          if (state.selected.size > before + 1) return renderSelect(); // 頼る項目にも印を付けて見せる
+        } else state.selected.delete(item.id);
         renderSummary();
       });
       const note = installed ? `入っています${d.version ? `（${d.version}）` : ""}` : d.state === "installedNotOnPath" ? "入っていますが、ターミナルから使えるように設定します" : item.description;
@@ -116,7 +170,8 @@ function renderSelect() {
           badge(TIER_LABEL[item.tier]),
         ),
       );
-    }),
+    },
+    { selectable: true },
   );
   renderSummary();
 }
@@ -126,6 +181,14 @@ function renderSummary() {
   const mb = chosen.reduce((s, i) => s + (i.detection.state === "missing" ? i.approxSizeMB ?? 0 : 0), 0);
   $("select-summary").textContent = chosen.length ? `${chosen.length} 個を入れます（ダウンロード 約 ${mb} MB）` : "入れるものはありません。";
   $("do-install").textContent = chosen.length ? "インストール" : "次へ";
+  const unmet = new Set(unmetGroups((i) => present(i) || state.selected.has(i.id)).map((g) => g.id));
+  for (const g of state.info.groups) {
+    const note = $(`group-note-${g.id}`);
+    if (!note) continue;
+    note.hidden = !unmet.has(g.id);
+    note.textContent = `${pickOne(g)}を選んでください。`;
+  }
+  $("do-install").disabled = unmet.size > 0;
 }
 
 // --- インストール ---
@@ -150,6 +213,7 @@ function renderInstallRow(id) {
     { id: `row-${id}` },
     el("div", { class: "row" }, statusIcon, el("div", { class: "grow" }, el("div", { class: "name", text: item.name })), badge(...label)),
     showBar ? el("progress", { max: p.total, value: p.received }) : null,
+    p.status === "running" && p.attention ? el("div", { class: "attention", text: p.attention }) : null,
     p.error ? el("div", { class: "error", text: p.error }) : null,
     p.lines.length ? details : null,
   );
@@ -192,6 +256,8 @@ window.setup.onInstallEvent((e) => {
   } else if (e.type === "progress") {
     p.received = e.received;
     p.total = e.total;
+  } else if (e.type === "attention") {
+    p.attention = e.message;
   } else if (e.type === "item") {
     p.status = e.status;
     p.error = e.error ?? null;
@@ -272,13 +338,31 @@ async function showLogin() {
 
 // --- 完了 ---
 
+// 使い方の案内は groups.json の done で決める
+// （"launch": アプリを開くボタン / "terminal": 打つコマンド / "start": 使い始める前に一度開くアプリ）
 async function showDone() {
   state.items = await window.setup.detectAll();
-  const paseo = state.items.find((i) => i.id === "paseo");
-  $("launch-paseo").disabled = paseo?.detection.state === "missing";
-  const notReady = state.items.filter((i) => i.tier === "required" && i.detection.state !== "installed");
+  const groupOf = (i) => state.info.groups.find((g) => g.id === i.group);
+  const openable = (kind) => state.items.filter((i) => groupOf(i)?.done === kind && i.launchable && present(i));
+  const apps = openable("launch");
+  const starts = openable("start");
+  const commands = state.items.filter((i) => groupOf(i)?.done === "terminal" && i.command && i.detection.state === "installed");
+  const buttons = (list) =>
+    list.map((i) => {
+      const btn = el("button", { class: "primary", text: `${i.name} を開く` });
+      btn.addEventListener("click", () => window.setup.launch(i.id));
+      return btn;
+    });
+  $("launch-list").replaceChildren(...buttons(apps));
+  $("start-list").replaceChildren(...buttons(starts));
+  $("command-list").replaceChildren(...commands.map((i) => el("pre", {}, el("code", { text: i.command }))));
+  $("done-apps").hidden = !apps.length;
+  $("done-start").hidden = !starts.length;
+  $("done-terminal").hidden = !commands.length;
+  $("done-lead").textContent = apps.length && commands.length ? "使い始めるには、どちらかの方法で。" : apps.length || commands.length ? "使い始めるには、次の方法で。" : "";
+  const notReady = unmetGroups((i) => i.detection.state === "installed");
   $("done-note").textContent = notReady.length
-    ? `まだ使えないもの: ${notReady.map((i) => i.name).join("、")}`
+    ? `まだ使えません: ${notReady.map(pickOne).join("、")}を入れてください。`
     : "ターミナルは、このアプリを開く前から開いていたものではなく、新しく開いたものを使ってください。";
   show("done");
 }
@@ -350,7 +434,8 @@ $("to-select").addEventListener("click", () => {
 });
 $("back-check").addEventListener("click", () => show("check"));
 $("do-install").addEventListener("click", () => {
-  const ids = state.items.filter((i) => state.selected.has(i.id)).map((i) => i.id);
+  const chosen = withDeps([...state.selected]); // 頼る項目の印を外していても、入れるときには要る
+  const ids = state.items.filter((i) => chosen.has(i.id)).map((i) => i.id);
   if (ids.length) startInstall(ids);
   else showLogin();
 });
@@ -363,7 +448,6 @@ $("retry").addEventListener("click", () => startInstall(state.retryIds));
 $("to-done").addEventListener("click", showLogin);
 $("login-next").addEventListener("click", () => (stopLogin(), showDone()));
 $("login-skip").addEventListener("click", () => (stopLogin(), showDone()));
-$("launch-paseo").addEventListener("click", () => window.setup.launch("paseo"));
 $("check-update").addEventListener("click", () => checkUpdate());
 $("update-apply").addEventListener("click", async () => {
   renderUpdate({ phase: "downloading" });
