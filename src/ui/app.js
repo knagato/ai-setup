@@ -17,6 +17,7 @@ const state = {
   lastIds: [],
   installing: false,
   update: null, // update:check の結果（新しい版があるときだけ）
+  returning: false, // 2回目以降の起動（ログインの要るものがもう入っている）。ログインの確認から始める
 };
 
 function el(tag, attrs = {}, ...children) {
@@ -65,6 +66,7 @@ function renderGroups(container, renderItem, { selectable = false } = {}) {
 }
 
 function show(page) {
+  $("boot").hidden = true;
   for (const p of PAGES) $(p).hidden = p !== page;
   const idx = PAGES.indexOf(page);
   for (const li of $("steps").children) {
@@ -292,8 +294,10 @@ const LOGIN_POLL_MS = 3000;
 let loginTimer = null;
 
 function renderLogin(rows) {
+  // ログインの確認から始めたときは、入っているものだけを出す（入れるのは「ほかのものを入れる」から）
+  const shown = state.returning ? rows.filter((r) => r.installed) : rows;
   $("login-list").replaceChildren(
-    ...rows.map((r) => {
+    ...shown.map((r) => {
       const [label, kind] = !r.installed
         ? ["入っていません", ""]
         : r.loggedIn === true
@@ -329,11 +333,15 @@ function stopLogin() {
   loginTimer = null;
 }
 
-async function showLogin() {
+// refresh: false なら、起動時の判定（app:returning）の結果をそのまま使う
+async function showLogin({ refresh = true } = {}) {
   stopLogin();
   $("login-list").replaceChildren(el("li", {}, el("div", { class: "row" }, el("span", { class: "spinner" }), el("span", { text: "確認中" }))));
+  $("login-title").textContent = state.returning ? "ログインの確認" : "ログインしましょう";
+  $("login-more").hidden = !state.returning;
+  $("login-skip").hidden = state.returning;
   show("login");
-  pollLogin(true);
+  pollLogin(refresh);
 }
 
 // --- 完了 ---
@@ -418,8 +426,11 @@ window.setup.onUpdateEvent((e) => {
   $("dry-banner").hidden = !state.info.dryRun;
   $("env").textContent = `${state.info.os === "darwin" ? "macOS" : "Windows"} ${state.info.arch} ・ v${state.info.version}`;
   if (state.info.catalogErrors.length) console.error(state.info.catalogErrors);
-  show("welcome");
   checkUpdate({ quiet: true });
+  // ログインが切れて開き直すことが多いので、もう入っているならログインの確認から始める
+  state.returning = await window.setup.isReturning();
+  if (state.returning) showLogin({ refresh: false });
+  else show("welcome");
 })();
 
 $("start").addEventListener("click", () => {
@@ -447,6 +458,12 @@ $("cancel").addEventListener("click", () => {
 $("retry").addEventListener("click", () => startInstall(state.retryIds));
 $("to-done").addEventListener("click", showLogin);
 $("login-next").addEventListener("click", () => (stopLogin(), showDone()));
+$("login-more").addEventListener("click", () => {
+  stopLogin();
+  state.returning = false; // ここからは初めてのときと同じ流れ（環境チェック → 選択 → インストール → ログイン）
+  show("check");
+  runCheck();
+});
 $("login-skip").addEventListener("click", () => (stopLogin(), showDone()));
 $("check-update").addEventListener("click", () => checkUpdate());
 $("update-apply").addEventListener("click", async () => {

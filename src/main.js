@@ -99,6 +99,13 @@ async function loginRows(refresh) {
   return loginCache;
 }
 
+// 2回目以降の起動か（ログインの要るものがもう入っているか）。入っていれば、画面はログインの確認から始める。
+// 判定だけで、ログインの状態は聞かない（それは login:list が数秒ごとに聞く）。結果は login:list が使い回す
+handle("app:returning", async () => {
+  const { rows } = await loginRows(true);
+  return rows.some(({ detection }) => detection.state !== "missing" && detection.state !== "unsupported");
+});
+
 handle("login:list", async (refresh) => {
   const { envInfo, rows } = await loginRows(!!refresh);
   return Promise.all(

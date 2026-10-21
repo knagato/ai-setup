@@ -26,7 +26,7 @@
     </div>
 
     <main>
-      <section id="welcome" class="page">
+      <section id="welcome" class="page" hidden>
         <h1>AI を使う準備をしましょう</h1>
         <p class="lead">
           このアプリは、パソコンで AI エージェントを動かすためのソフトをまとめて入れます。
@@ -73,8 +73,12 @@
         </div>
       </section>
 
+      <section id="boot" class="page">
+        <p class="lead"><span class="spinner"></span> 起動しています…</p>
+      </section>
+
       <section id="login" class="page" hidden>
-        <h1>ログインしましょう</h1>
+        <h1 id="login-title">ログインしましょう</h1>
         <p class="lead">
           「ログインする」を押すとターミナルが開き、続いてブラウザが開きます。ブラウザの案内に従ってください。
           終わるとここに「ログイン済み」と出ます。
@@ -82,6 +86,7 @@
         <ul id="login-list" class="items"></ul>
         <p class="note">あとからでもログインできます（ターミナルで claude や codex と打つと案内が出ます）。</p>
         <div class="actions">
+          <button id="login-more" hidden>ほかのものを入れる</button>
           <button id="login-skip">あとで</button>
           <button id="login-next" class="primary">次へ</button>
         </div>
